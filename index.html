@@ -291,22 +291,21 @@
 
         // --- Main App Component ---
         function YeshivasZerachApp() {
-          const [appMode, setAppMode] = useState('home'); 
+          const [appMode, setAppMode] = useState('loading'); 
           const [category, setCategory] = useState(null); 
           const [templates, setTemplates] = useState(INITIAL_TEMPLATES);
           const [selectedTemplate, setSelectedTemplate] = useState(INITIAL_TEMPLATES[0].id);
           const [formData, setFormData] = useState({ name: '', amount: '' });
           const [activeFieldKey, setActiveFieldKey] = useState(null); 
           
-          // New Template Upload State
-          // (No admin logic, just static uploads available via props)
-
           // Asset State
-          const [logoImage, setLogoImage] = useState(null);
-          const [decorationImage, setDecorationImage] = useState(null);
-          const [coloredLogoImage, setColoredLogoImage] = useState(null);
-          const [milestoneImages, setMilestoneImages] = useState({});
-          const [contentImages, setContentImages] = useState({});
+          const [assets, setAssets] = useState({
+              logo: null,
+              decoration: null,
+              coloredLogo: null,
+              milestones: {},
+              content: {}
+          });
 
           const [containerWidth, setContainerWidth] = useState(0);
           const canvasRef = useRef(null);
@@ -315,71 +314,71 @@
 
           // Derived State
           const activeTemplate = templates.find(t => t.id === selectedTemplate);
-          // Determine canvas dimensions dynamically based on the selected template (prioritize stored dimensions, fallback to defaults)
           const canvasWidth = activeTemplate?.width || DEFAULT_WIDTH;
           const canvasHeight = activeTemplate?.height || DEFAULT_HEIGHT;
 
-          // Load Assets
+          // --- Eager Asset Preloading ---
           useEffect(() => {
-            const img = new Image();
-            img.src = LOGO_URL;
-            img.crossOrigin = "anonymous";
-            img.onload = () => setLogoImage(img);
+            const loadAssets = async () => {
+                const imagePromises = [];
+                const load = (src) => new Promise((resolve) => {
+                    const img = new Image();
+                    img.src = src;
+                    img.onload = () => resolve(img);
+                    img.onerror = () => resolve(null); // Resolve null to allow app to start even if one fails
+                });
 
-            const deco = new Image();
-            deco.src = DECORATION_URL;
-            deco.crossOrigin = "anonymous";
-            deco.onload = () => setDecorationImage(deco);
+                // 1. Core Assets
+                const logoPromise = load(LOGO_URL);
+                const decorationPromise = load(DECORATION_URL);
+                const coloredLogoPromise = load(COLORED_LOGO_URL);
 
-            const colLogo = new Image();
-            colLogo.src = COLORED_LOGO_URL;
-            colLogo.crossOrigin = "anonymous";
-            colLogo.onload = () => setColoredLogoImage(colLogo);
+                // 2. Dynamic Collections (Milestones & Content)
+                // We load them and update template dimensions in one go
+                const milestoneMap = {};
+                const contentMap = {};
+                const updatedTemplates = [...INITIAL_TEMPLATES];
 
-            // Load Milestone Images & Update Template Dimensions
-            MILESTONE_URLS.forEach((m) => {
-                const mImg = new Image();
-                mImg.src = m.url;
-                mImg.crossOrigin = "anonymous";
-                mImg.onload = () => {
-                    setMilestoneImages(prev => ({ ...prev, [m.id]: mImg }));
-                    
-                    // Update template dimension based on loaded image
-                    setTemplates(prev => prev.map(t => {
-                        if (t.id === m.id) {
-                            const aspectRatio = mImg.height / mImg.width;
-                            return {
-                                ...t,
-                                width: DEFAULT_WIDTH,
-                                height: DEFAULT_WIDTH * aspectRatio
-                            };
+                // Helper to load and resize templates
+                const processCollection = async (collection, map) => {
+                    await Promise.all(collection.map(async (item) => {
+                        const img = await load(item.url);
+                        if (img) {
+                            map[item.id] = img;
+                            // Update matching template dimensions
+                            const tIndex = updatedTemplates.findIndex(t => t.id === item.id);
+                            if (tIndex !== -1) {
+                                const ar = img.height / img.width;
+                                updatedTemplates[tIndex] = {
+                                    ...updatedTemplates[tIndex],
+                                    width: DEFAULT_WIDTH,
+                                    height: DEFAULT_WIDTH * ar
+                                };
+                            }
                         }
-                        return t;
                     }));
                 };
-            });
 
-            // Load Content Images & Update Dimensions
-            CONTENT_URLS.forEach((c) => {
-                const cImg = new Image();
-                cImg.src = c.url;
-                cImg.crossOrigin = "anonymous";
-                cImg.onload = () => {
-                    setContentImages(prev => ({ ...prev, [c.id]: cImg }));
-                    
-                    setTemplates(prev => prev.map(t => {
-                        if (t.id === c.id) {
-                            const aspectRatio = cImg.height / cImg.width;
-                            return {
-                                ...t,
-                                width: DEFAULT_WIDTH,
-                                height: DEFAULT_WIDTH * aspectRatio
-                            };
-                        }
-                        return t;
-                    }));
-                };
-            });
+                await Promise.all([
+                    processCollection(MILESTONE_URLS, milestoneMap),
+                    processCollection(CONTENT_URLS, contentMap)
+                ]);
+
+                const [logo, decoration, coloredLogo] = await Promise.all([logoPromise, decorationPromise, coloredLogoPromise]);
+
+                setAssets({
+                    logo,
+                    decoration,
+                    coloredLogo,
+                    milestones: milestoneMap,
+                    content: contentMap
+                });
+                
+                setTemplates(updatedTemplates);
+                setAppMode('home'); // Ready!
+            };
+
+            loadAssets();
           }, []);
 
           useEffect(() => {
@@ -410,6 +409,7 @@
               }
           };
 
+          // --- Canvas Drawing ---
           const draw = useCallback(() => {
             const canvas = canvasRef.current;
             if (!canvas) return;
@@ -423,12 +423,12 @@
                 canvasWidth, 
                 canvasHeight, 
                 { ...formData, hideText: false }, 
-                logoImage,
-                decorationImage,
-                { coloredLogo: coloredLogoImage, ...milestoneImages, ...contentImages }
+                assets.logo,
+                assets.decoration,
+                { coloredLogo: assets.coloredLogo, ...assets.milestones, ...assets.content }
               );
             }
-          }, [selectedTemplate, formData, logoImage, decorationImage, coloredLogoImage, milestoneImages, contentImages, templates, canvasWidth, canvasHeight]);
+          }, [selectedTemplate, formData, assets, templates, canvasWidth, canvasHeight]);
 
           useEffect(() => {
             if (appMode === 'editor') {
@@ -438,7 +438,7 @@
                     setTimeout(draw, 100);
                 }
             }
-          }, [draw, appMode, canvasWidth, canvasHeight]); 
+          }, [draw, appMode, canvasWidth, canvasHeight]);
 
           useEffect(() => {
             if (activeFieldKey && overlayInputRef.current) {
@@ -454,7 +454,6 @@
 
             const template = templates.find(t => t.id === selectedTemplate);
             
-            // STRICT RULE: No editing for Content or Milestones
             if (template.category === 'content' || template.category === 'milestones') return;
 
             if (!template || !template.getFields) return;
@@ -484,8 +483,8 @@
             template.render(
                 ctx, canvasWidth, canvasHeight, 
                 { ...formData, hideText: false }, 
-                logoImage, decorationImage, 
-                { coloredLogo: coloredLogoImage, ...milestoneImages, ...contentImages }
+                assets.logo, assets.decoration, 
+                { coloredLogo: assets.coloredLogo, ...assets.milestones, ...assets.content }
             );
 
             try {
@@ -506,7 +505,7 @@
             const field = fields.find(f => f.key === activeFieldKey);
             if (!field) return { display: 'none' };
 
-            const scale = containerWidth / canvasWidth; // Scale relative to current width
+            const scale = containerWidth / canvasWidth;
             const topPct = (field.y / canvasHeight) * 100;
             const fontSize = field.size * scale;
 
@@ -523,6 +522,24 @@
           };
 
           const activeFieldProps = activeTemplate?.getFields(canvasHeight).find(f => f.key === activeFieldKey);
+
+          // --- Loading Screen ---
+          if (appMode === 'loading') {
+              return (
+                  <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-6 animate-fade-in">
+                      <div className="w-20 h-20 rounded-3xl bg-slate-900 border border-slate-700 flex items-center justify-center shadow-[0_0_40px_-10px_rgba(245,158,11,0.2)] animate-pulse">
+                          <img src={APP_LOGO_URL} alt="Logo" className="w-12 h-12 object-cover opacity-90" />
+                      </div>
+                      <div className="flex flex-col items-center gap-2">
+                          <h1 className="text-2xl font-bold text-slate-100 font-serif tracking-widest">Yeshivas Zerach</h1>
+                          <div className="flex items-center gap-2 text-amber-500 text-sm font-bold uppercase tracking-widest">
+                              <RefreshCw size={14} className="animate-spin" />
+                              Loading Studio...
+                          </div>
+                      </div>
+                  </div>
+              );
+          }
 
           return (
             <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 font-sans text-slate-100 pb-20 selection:bg-amber-500/30 selection:text-amber-100">
@@ -652,20 +669,13 @@
                                     style={{ animationDelay: `${i * 100}ms` }}
                                     className="group relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:shadow-[0_0_30px_-10px_rgba(245,158,11,0.2)] transition-all duration-500 animate-fade-in-up"
                                 >
-                                    {/* Aspect Ratio style removed here to allow image natural shape in grid logic if we wanted, 
-                                        but for thumbnail consistency we typically want fixed aspect. 
-                                        However, TemplateThumbnail forces a 5:7 canvas. 
-                                        For custom uploads with different AR, the thumbnail might look squashed if we force it.
-                                        Let's update TemplateThumbnail to be smarter or just let CSS handle it.
-                                        For now, keeping 5/7 grid aspect for uniformity.
-                                    */}
-                                    <div className="aspect-[5/7]">
+                                    <div style={{ aspectRatio: `${t.width || DEFAULT_WIDTH}/${t.height || DEFAULT_HEIGHT}` }}>
                                         <div className="absolute inset-0 opacity-80 group-hover:opacity-100 transition-opacity duration-500">
                                             <TemplateThumbnail 
                                                 template={t} 
-                                                logo={logoImage} 
-                                                decoration={decorationImage} 
-                                                extra={{ coloredLogo: coloredLogoImage, ...milestoneImages, ...contentImages }}
+                                                logo={assets.logo} 
+                                                decoration={assets.decoration} 
+                                                extra={{ coloredLogo: assets.coloredLogo, ...assets.milestones, ...assets.content }}
                                             />
                                         </div>
                                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
@@ -684,7 +694,6 @@
                     <>
                         <div 
                             ref={containerRef} 
-                            // Style allows dynamic height based on aspect ratio
                             style={{ aspectRatio: `${canvasWidth} / ${canvasHeight}` }}
                             className="relative w-full bg-slate-800 rounded-lg overflow-hidden shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] ring-1 ring-slate-700 group select-none animate-scale-in"
                         >
@@ -709,15 +718,6 @@
                                     style={getOverlayStyle()}
                                     autoFocus
                                 />
-                            )}
-                            
-                            {!logoImage && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-slate-950 z-10 pointer-events-none">
-                                    <div className="flex flex-col items-center gap-3">
-                                        <RefreshCw className="animate-spin text-amber-500" />
-                                        <span className="text-xs font-bold tracking-widest text-slate-500 uppercase">Loading Assets</span>
-                                    </div>
-                                </div>
                             )}
                         </div>
 
