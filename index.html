@@ -217,7 +217,7 @@
             id: 'silver-milestone',
             name: 'Silver Milestone',
             category: 'milestones',
-            getFields: (h) => [{ key: 'name', y: h * 0.55, size: 120, color: '#1e293b', font: FONT_HEADER, placeholder: "Type Amount" }],
+            getFields: (h) => [], // Static for milestones
             render: (ctx, width, height, data, logo) => {
               const grad = ctx.createLinearGradient(0, 0, width, height);
               grad.addColorStop(0, '#e2e8f0'); 
@@ -371,9 +371,7 @@
                 const ctx = canvas.getContext('2d');
                 const scale = 0.25; 
                 const logicW = 1080;
-                
-                // Use template-specific height if available, else default
-                const logicH = template.height || 1512;
+                const logicH = 1512;
                 
                 canvas.width = logicW * scale;
                 canvas.height = logicH * scale;
@@ -418,15 +416,11 @@
           const [milestoneImages, setMilestoneImages] = useState({});
 
           const [containerWidth, setContainerWidth] = useState(0);
+          const canvasHeight = 1512;
           const canvasRef = useRef(null);
           const containerRef = useRef(null);
           const overlayInputRef = useRef(null);
           const fileInputRef = useRef(null);
-
-          // Derived State
-          const activeTemplate = templates.find(t => t.id === selectedTemplate);
-          // Determine canvas height dynamically based on the selected template
-          const canvasHeight = activeTemplate?.height || 1512;
 
           // Load Assets
           useEffect(() => {
@@ -536,7 +530,6 @@
                   img.onload = () => {
                       const newId = `custom-${Date.now()}`;
                       
-                      // Calculate dynamic height based on image aspect ratio relative to fixed width (1080)
                       const aspectRatio = img.height / img.width;
                       const dynamicHeight = CANVAS_WIDTH * aspectRatio;
 
@@ -544,20 +537,29 @@
                           id: newId,
                           name: newTemplateName,
                           category: newTemplateCategory,
-                          height: dynamicHeight, // Store custom height
-                          getFields: (h) => [{ 
-                              key: 'name', 
-                              y: h * 0.5, 
-                              size: 100, 
-                              color: '#000000', 
-                              font: FONT_HEADER, 
-                              placeholder: "Type Text Here" 
-                          }],
+                          height: dynamicHeight, 
+                          getFields: (h) => {
+                              // Only allow editing for "templates" category
+                              if (newTemplateCategory === 'templates') {
+                                  return [{ 
+                                      key: 'name', 
+                                      y: h * 0.5, 
+                                      size: 100, 
+                                      color: '#000000', 
+                                      font: FONT_HEADER, 
+                                      placeholder: "Type Text Here" 
+                                  }];
+                              }
+                              // Content and Milestones are static images
+                              return [];
+                          },
                           render: (ctx, width, height, data, logo) => {
-                              // Draw image filling the specific dimensions
-                              ctx.drawImage(img, 0, 0, width, height);
+                              const scale = Math.max(width / img.width, height / img.height);
+                              const x = (width / 2) - (img.width / 2) * scale;
+                              const y = (height / 2) - (img.height / 2) * scale;
+                              ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
 
-                              if (!data.hideText) {
+                              if (!data.hideText && newTemplateCategory === 'templates') {
                                   ctx.save();
                                   ctx.shadowColor = "rgba(255,255,255,0.8)";
                                   ctx.shadowBlur = 10;
@@ -627,6 +629,10 @@
             const clickY = (e.clientY - rect.top) * scaleY;
 
             const template = templates.find(t => t.id === selectedTemplate);
+            
+            // STRICT RULE: No editing for Content or Milestones
+            if (template.category === 'content' || template.category === 'milestones') return;
+
             if (!template || !template.getFields) return;
             
             const fields = template.getFields(canvasHeight);
@@ -692,6 +698,7 @@
             };
           };
 
+          const activeTemplate = templates.find(t => t.id === selectedTemplate);
           const activeFieldProps = activeTemplate?.getFields(canvasHeight).find(f => f.key === activeFieldKey);
 
           return (
@@ -920,28 +927,19 @@
                                     key={t.id}
                                     onClick={() => handleTemplateSelect(t.id)}
                                     style={{ animationDelay: `${i * 100}ms` }}
-                                    className="group relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:shadow-[0_0_30px_-10px_rgba(245,158,11,0.2)] transition-all duration-500 animate-fade-in-up"
+                                    className="group relative aspect-[5/7] rounded-xl overflow-hidden border border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:shadow-[0_0_30px_-10px_rgba(245,158,11,0.2)] transition-all duration-500 animate-fade-in-up"
                                 >
-                                    {/* Aspect Ratio style removed here to allow image natural shape in grid logic if we wanted, 
-                                        but for thumbnail consistency we typically want fixed aspect. 
-                                        However, TemplateThumbnail forces a 5:7 canvas. 
-                                        For custom uploads with different AR, the thumbnail might look squashed if we force it.
-                                        Let's update TemplateThumbnail to be smarter or just let CSS handle it.
-                                        For now, keeping 5/7 grid aspect for uniformity.
-                                    */}
-                                    <div className="aspect-[5/7]">
-                                        <div className="absolute inset-0 opacity-80 group-hover:opacity-100 transition-opacity duration-500">
-                                            <TemplateThumbnail 
-                                                template={t} 
-                                                logo={logoImage} 
-                                                decoration={decorationImage} 
-                                                extra={{ coloredLogo: coloredLogoImage, ...milestoneImages }}
-                                            />
-                                        </div>
-                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
-                                        <div className="absolute inset-x-0 bottom-0 p-3 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                                            <span className="text-slate-200 text-xs font-bold block text-center truncate tracking-wide group-hover:text-amber-400 transition-colors">{t.name}</span>
-                                        </div>
+                                    <div className="absolute inset-0 opacity-80 group-hover:opacity-100 transition-opacity duration-500">
+                                        <TemplateThumbnail 
+                                            template={t} 
+                                            logo={logoImage} 
+                                            decoration={decorationImage} 
+                                            extra={{ coloredLogo: coloredLogoImage, ...milestoneImages }}
+                                        />
+                                    </div>
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
+                                    <div className="absolute inset-x-0 bottom-0 p-3 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                                        <span className="text-slate-200 text-xs font-bold block text-center truncate tracking-wide group-hover:text-amber-400 transition-colors">{t.name}</span>
                                     </div>
                                 </button>
                             ))}
