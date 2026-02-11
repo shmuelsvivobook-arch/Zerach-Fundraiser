@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yeshivas Zerach Design Studio</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+
+    <!-- Custom Animations -->
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
+        .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
+        .animate-scale-in { animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        
+        /* Disable selection for logo interaction */
+        .no-select {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+
+        // --- Icons (Inline SVGs) ---
+        const Icon = ({ children, size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+
+        const ArrowLeft = (props) => <Icon {...props}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></Icon>;
+        const Check = (props) => <Icon {...props}><path d="M20 6 9 17l-5-5"/></Icon>;
+        const Download = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></Icon>;
+        const FileText = (props) => <Icon {...props}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></Icon>;
+        const LayoutGrid = (props) => <Icon {...props}><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></Icon>;
+        const RefreshCw = (props) => <Icon {...props}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></Icon>;
+        const Sparkles = (props) => <Icon {...props}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 5h4"/><path d="M19 17v4"/><path d="M15 19h4"/></Icon>;
+        const Plus = (props) => <Icon {...props}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>;
+        const UploadIcon = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></Icon>;
+        const Trophy = (props) => <Icon {...props}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></Icon>;
+
+        // --- Configuration ---
+        const CANVAS_WIDTH = 1080;
+        const LOGO_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1768422570/Zerach_Full_Logo_Package_-_standard_online_use_2_260114_165502_2_zprn5m_w7pkxj.png";
+        const APP_LOGO_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1768416609/copy_of_zerach_full_logo_package_-_standard_online_use_2_260114_165502_2_zprn5m_c1d92b.jpg";
+        const DECORATION_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1769418531/Gemini_Generated_Image_4mrufu4mrufu4mru_1_1_sdfjzv.png";
+
+        // --- Fonts ---
+        const FONT_HEADER = "Cinzel";
+        const FONT_BODY = "Montserrat";
+
+        // --- Helper: Draw Text with Auto-Fit ---
+        const drawFitText = (ctx, text, x, y, maxWidth, fontFace, initialSize, color, align = 'center') => {
+            let currentSize = initialSize;
+            ctx.font = `bold ${currentSize}px ${fontFace}`;
+            let textMetrics = ctx.measureText(text);
+            while ((textMetrics.width > maxWidth) && currentSize > 40) {
+                currentSize -= 2;
+                ctx.font = `bold ${currentSize}px ${fontFace}`;
+                textMetrics = ctx.measureText(text);
+            }
+            ctx.fillStyle = color;
+            ctx.textAlign = align;
+            ctx.fillText(text, x, y);
+            return currentSize; 
+        };
+
+        // --- Initial Template Definitions ---
+        const INITIAL_TEMPLATES = [
+          {
+            id: 'classic-navy',
+            name: 'Classic Navy',
+            category: 'templates',
+            getFields: (h) => [{ key: 'name', y: h * 0.55, size: 90, color: '#ffffff', font: FONT_BODY, placeholder: "Type Donor's Name" }],
+            render: (ctx, width, height, data, logo, decoration, extra) => {
+              ctx.fillStyle = '#0f172a';
+              ctx.fillRect(0, 0, width, height);
+              ctx.strokeStyle = '#d4af37';
+              ctx.lineWidth = 20;
+              ctx.strokeRect(40, 40, width - 80, height - 80);
+              ctx.strokeStyle = '#ffffff';
+              ctx.lineWidth = 4;
+              ctx.strokeRect(70, 70, width - 140, height - 140);
+
+              if (logo) {
+                const logoW = 400;
+                const logoH = (logo.height / logo.width) * logoW;
+                ctx.drawImage(logo, (width - logoW) / 2, height * 0.05, logoW, logoH);
+              }
+
+              ctx.fillStyle = '#d4af37';
+              ctx.font = `bold 100px ${FONT_HEADER}`;
+              ctx.textAlign = 'center';
+              ctx.fillText("THANK YOU", width / 2, height * 0.45);
+
+              if (!data.hideText) {
+                 drawFitText(ctx, data.name || "Donor Name", width / 2, height * 0.55, width - 200, FONT_BODY, 90, '#ffffff');
+              }
+
+              ctx.fillStyle = '#94a3b8';
+              ctx.font = `italic 55px ${FONT_BODY}`;
+              ctx.fillText("For your generous support", width / 2, height * 0.64);
+
+              if (decoration) {
+                  const decW = 250;
+                  const decH = (decoration.height / decoration.width) * decW;
+                  const decY = height - decH - 120; 
+                  ctx.drawImage(decoration, (width - decW) / 2, decY, decW, decH);
+              }
+            }
+          },
+          {
+            id: 'golden-call',
+            name: 'Golden Appeal',
+            category: 'content',
+            getFields: (h) => [],
+            render: (ctx, width, height, data, logo) => {
+              const grad = ctx.createLinearGradient(0, 0, width, height);
+              grad.addColorStop(0, '#000000');
+              grad.addColorStop(1, '#1c1917');
+              ctx.fillStyle = grad;
+              ctx.fillRect(0, 0, width, height);
+
+              ctx.strokeStyle = '#f59e0b';
+              ctx.lineWidth = 8;
+              ctx.beginPath();
+              ctx.moveTo(100, 100);
+              ctx.lineTo(width - 100, 100);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(100, height - 100);
+              ctx.lineTo(width - 100, height - 100);
+              ctx.stroke();
+
+              if (logo) {
+                const logoW = 350;
+                const logoH = (logo.height / logo.width) * logoW;
+                ctx.drawImage(logo, (width - logoW) / 2, height * 0.12, logoW, logoH);
+              }
+
+              ctx.fillStyle = '#fbbf24';
+              ctx.font = `bold 60px ${FONT_BODY}`;
+              ctx.textAlign = 'center';
+              ctx.fillText("PARTNER WITH US", width / 2, height * 0.45);
+
+              ctx.fillStyle = '#ffffff';
+              ctx.font = `bold 90px ${FONT_HEADER}`;
+              ctx.fillText("ANNUAL YESHIVAS", width / 2, height * 0.55); 
+              ctx.fillText("ZERACH CAMPAIGN", width / 2, height * 0.62);
+
+              ctx.fillStyle = '#d6d3d1';
+              ctx.font = `italic 50px ${FONT_BODY}`;
+              ctx.fillText("Build the future of Torah", width / 2, height * 0.75);
+              
+              ctx.fillStyle = '#f59e0b';
+              if (ctx.roundRect) {
+                  ctx.beginPath();
+                  ctx.roundRect(width/2 - 200, height * 0.82, 400, 100, 50);
+                  ctx.fill();
+              } else {
+                  ctx.fillRect(width/2 - 200, height * 0.82, 400, 100);
+              }
+              
+              ctx.fillStyle = '#000000';
+              ctx.font = `bold 40px ${FONT_BODY}`;
+              ctx.fillText("DONATE NOW", width/2, height * 0.82 + 65);
+            }
+          },
+          {
+            id: 'silver-milestone',
+            name: 'Silver Milestone',
+            category: 'milestones',
+            getFields: (h) => [{ key: 'name', y: h * 0.55, size: 120, color: '#1e293b', font: FONT_HEADER, placeholder: "Type Amount" }],
+            render: (ctx, width, height, data, logo) => {
+              // Silver Gradient Background
+              const grad = ctx.createLinearGradient(0, 0, width, height);
+              grad.addColorStop(0, '#e2e8f0'); // Slate 200
+              grad.addColorStop(1, '#94a3b8'); // Slate 400
+              ctx.fillStyle = grad;
+              ctx.fillRect(0, 0, width, height);
+
+              // Circular Progress Graphic (Mock)
+              ctx.strokeStyle = '#ffffff';
+              ctx.lineWidth = 30;
+              ctx.beginPath();
+              ctx.arc(width/2, height * 0.45, 300, 0, 2 * Math.PI);
+              ctx.stroke();
+              
+              ctx.strokeStyle = '#3b82f6'; // Blue Progress
+              ctx.lineWidth = 30;
+              ctx.beginPath();
+              ctx.arc(width/2, height * 0.45, 300, -Math.PI / 2, Math.PI);
+              ctx.stroke();
+
+              if (logo) {
+                const logoW = 250;
+                const logoH = (logo.height / logo.width) * logoW;
+                ctx.drawImage(logo, (width - logoW) / 2, height * 0.10, logoW, logoH);
+              }
+
+              ctx.fillStyle = '#1e3a8a';
+              ctx.font = `bold 60px ${FONT_BODY}`;
+              ctx.textAlign = 'center';
+              ctx.fillText("MILESTONE REACHED", width / 2, height * 0.80);
+
+              if (!data.hideText) {
+                 drawFitText(ctx, data.name || "$180,000", width / 2, height * 0.55, width - 200, FONT_HEADER, 120, '#1e293b');
+              }
+              
+              ctx.font = `italic 40px ${FONT_BODY}`;
+              ctx.fillStyle = '#475569';
+              ctx.fillText("RAISED SO FAR", width / 2, height * 0.48);
+            }
+          }
+        ];
+
+        // --- Component: Template Thumbnail ---
+        const TemplateThumbnail = ({ template, logo, decoration, extra }) => {
+            const canvasRef = useRef(null);
+            
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const scale = 0.25; 
+                const logicW = 1080;
+                const logicH = 1512;
+                
+                canvas.width = logicW * scale;
+                canvas.height = logicH * scale;
+                
+                ctx.save();
+                ctx.scale(scale, scale);
+                
+                const data = { name: "Text", amount: "Amount", hideText: false };
+                
+                if (template.render) {
+                    template.render(ctx, logicW, logicH, data, logo, decoration, extra);
+                }
+                
+                ctx.restore();
+            }, [template, logo, decoration, extra]);
+
+            return <canvas ref={canvasRef} className="w-full h-full object-contain pointer-events-none" />;
+        };
+
+        // --- Main App Component ---
+        function YeshivasZerachApp() {
+          const [appMode, setAppMode] = useState('home'); 
+          const [category, setCategory] = useState(null); 
+          const [templates, setTemplates] = useState(INITIAL_TEMPLATES);
+          const [selectedTemplate, setSelectedTemplate] = useState(templates[0].id);
+          const [formData, setFormData] = useState({ name: '', amount: '' });
+          const [activeFieldKey, setActiveFieldKey] = useState(null); 
+          
+          // Admin Mode State
+          const [logoClickCount, setLogoClickCount] = useState(0);
+          const clickTimeoutRef = useRef(null);
+          
+          // New Template Upload State
+          const [newTemplateName, setNewTemplateName] = useState("");
+          const [newTemplateCategory, setNewTemplateCategory] = useState("templates");
+          const [newTemplateFile, setNewTemplateFile] = useState(null);
+
+          // Asset State
+          const [logoImage, setLogoImage] = useState(null);
+          const [decorationImage, setDecorationImage] = useState(null);
+
+          const [containerWidth, setContainerWidth] = useState(0);
+          const canvasHeight = 1512;
+          const canvasRef = useRef(null);
+          const containerRef = useRef(null);
+          const overlayInputRef = useRef(null);
+          const fileInputRef = useRef(null);
+
+          // Load Assets
+          useEffect(() => {
+            const img = new Image();
+            img.src = LOGO_URL;
+            img.crossOrigin = "anonymous";
+            img.onload = () => setLogoImage(img);
+
+            const deco = new Image();
+            deco.src = DECORATION_URL;
+            deco.crossOrigin = "anonymous";
+            deco.onload = () => setDecorationImage(deco);
+          }, []);
+
+          useEffect(() => {
+            if (!containerRef.current) return;
+            setContainerWidth(containerRef.current.getBoundingClientRect().width);
+            const observer = new ResizeObserver((entries) => {
+                for (let entry of entries) {
+                    setContainerWidth(entry.contentRect.width);
+                }
+            });
+            observer.observe(containerRef.current);
+            return () => observer.disconnect();
+          }, [appMode]);
+
+          // --- Secret Admin Trigger ---
+          const handleLogoClick = (e) => {
+              // CRITICAL: Prevent default browser behavior (drag, select, context menu)
+              e.preventDefault(); 
+              e.stopPropagation(); 
+              
+              setLogoClickCount(prev => prev + 1);
+              
+              if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+              
+              // Reset count if idle for 1 second
+              clickTimeoutRef.current = setTimeout(() => {
+                  setLogoClickCount(0);
+              }, 1000);
+          };
+
+          useEffect(() => {
+              if (logoClickCount >= 5) {
+                  const pwd = prompt("Enter Admin Password:");
+                  if (pwd === "skravfund") {
+                      setAppMode('admin');
+                      setLogoClickCount(0);
+                  } else {
+                      alert("Incorrect Password");
+                      setLogoClickCount(0);
+                  }
+              }
+          }, [logoClickCount]);
+
+          // --- Template Selection & Navigation ---
+          const handleTemplateSelect = (id) => {
+              setSelectedTemplate(id);
+              setAppMode('editor');
+              setFormData({ name: '', amount: '' });
+              setActiveFieldKey(null);
+          };
+
+          const handleBack = () => {
+              if (appMode === 'editor' || appMode === 'admin') {
+                  setAppMode('home');
+              } else if (appMode === 'home' && category) {
+                  setCategory(null);
+              }
+          };
+
+          // --- Admin: Add New Template ---
+          const handleAddNewTemplate = () => {
+              if (!newTemplateFile || !newTemplateName) {
+                  alert("Please provide a name and an image.");
+                  return;
+              }
+
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                  const img = new Image();
+                  img.src = e.target.result;
+                  img.onload = () => {
+                      const newId = `custom-${Date.now()}`;
+                      const newTemplate = {
+                          id: newId,
+                          name: newTemplateName,
+                          category: newTemplateCategory,
+                          getFields: (h) => [{ 
+                              key: 'name', 
+                              y: h * 0.5, 
+                              size: 100, 
+                              color: '#000000', 
+                              font: FONT_HEADER, 
+                              placeholder: "Type Text Here" 
+                          }],
+                          render: (ctx, width, height, data, logo) => {
+                              const scale = Math.max(width / img.width, height / img.height);
+                              const x = (width / 2) - (img.width / 2) * scale;
+                              const y = (height / 2) - (img.height / 2) * scale;
+                              ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+
+                              if (!data.hideText) {
+                                  ctx.save();
+                                  ctx.shadowColor = "rgba(255,255,255,0.8)";
+                                  ctx.shadowBlur = 10;
+                                  drawFitText(ctx, data.name || "Type Text Here", width / 2, height * 0.5, width - 150, FONT_HEADER, 100, '#000000');
+                                  ctx.restore();
+                              }
+                          }
+                      };
+
+                      setTemplates(prev => [...prev, newTemplate]);
+                      alert("Template Added Successfully!");
+                      setNewTemplateName("");
+                      setNewTemplateFile(null);
+                      if(fileInputRef.current) fileInputRef.current.value = "";
+                  };
+              };
+              reader.readAsDataURL(newTemplateFile);
+          };
+
+          const draw = useCallback(() => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, CANVAS_WIDTH, canvasHeight);
+
+            const template = templates.find(t => t.id === selectedTemplate);
+            if (template && template.render) {
+              template.render(
+                ctx, 
+                CANVAS_WIDTH, 
+                canvasHeight, 
+                { ...formData, hideText: false }, 
+                logoImage,
+                decorationImage,
+                {}
+              );
+            }
+          }, [selectedTemplate, formData, logoImage, decorationImage, templates]);
+
+          useEffect(() => {
+            if (appMode === 'editor') {
+                if (document.fonts) {
+                    document.fonts.ready.then(() => draw());
+                } else {
+                    setTimeout(draw, 100);
+                }
+            }
+          }, [draw, appMode]);
+
+          useEffect(() => {
+            if (activeFieldKey && overlayInputRef.current) {
+                overlayInputRef.current.focus();
+            }
+          }, [activeFieldKey]);
+
+          const handleCanvasClick = (e) => {
+            const canvas = e.target;
+            const rect = canvas.getBoundingClientRect();
+            const scaleY = canvasHeight / rect.height;
+            const clickY = (e.clientY - rect.top) * scaleY;
+
+            const template = templates.find(t => t.id === selectedTemplate);
+            if (!template || !template.getFields) return;
+            
+            const fields = template.getFields(canvasHeight);
+            let foundKey = null;
+            
+            fields.forEach(field => {
+                if (Math.abs(clickY - field.y) < 120) {
+                    foundKey = field.key;
+                }
+            });
+
+            if (foundKey) {
+                setActiveFieldKey(foundKey);
+            } else {
+                setActiveFieldKey(null);
+            }
+          };
+
+          const handleDownload = () => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            setActiveFieldKey(null); 
+            const ctx = canvas.getContext('2d');
+            const template = templates.find(t => t.id === selectedTemplate);
+            template.render(
+                ctx, CANVAS_WIDTH, canvasHeight, 
+                { ...formData, hideText: false }, 
+                logoImage, decorationImage, 
+                {}
+            );
+
+            try {
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                const link = document.createElement('a');
+                link.download = `Zerach-${formData.name || 'Card'}.jpg`;
+                link.href = dataUrl;
+                link.click();
+            } catch (err) {
+                alert("Download error.");
+            }
+          };
+
+          const getOverlayStyle = () => {
+            const template = templates.find(t => t.id === selectedTemplate);
+            if (!template || !containerWidth || !activeFieldKey) return { display: 'none' };
+            const fields = template.getFields(canvasHeight);
+            const field = fields.find(f => f.key === activeFieldKey);
+            if (!field) return { display: 'none' };
+
+            const scale = containerWidth / CANVAS_WIDTH;
+            const topPct = (field.y / canvasHeight) * 100;
+            const fontSize = field.size * scale;
+
+            return {
+                top: `${topPct}%`,
+                left: '50%',
+                transform: 'translate(-50%, -50%)', 
+                fontSize: `${fontSize}px`,
+                color: field.color,
+                fontFamily: field.font,
+                width: '85%',
+                textShadow: '0px 4px 12px rgba(0,0,0,0.5)',
+            };
+          };
+
+          const activeTemplate = templates.find(t => t.id === selectedTemplate);
+          const activeFieldProps = activeTemplate?.getFields(canvasHeight).find(f => f.key === activeFieldKey);
+
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 font-sans text-slate-100 pb-20 selection:bg-amber-500/30 selection:text-amber-100">
+              
+              {/* --- Cinematic Header --- */}
+              <header className="fixed top-0 w-full z-50 px-6 py-4 flex items-center justify-between bg-slate-950/80 backdrop-blur-md border-b border-slate-800 shadow-lg">
+                <div className="flex items-center gap-4">
+                  <div 
+                    className="relative w-14 h-14 rounded-2xl overflow-hidden border border-slate-700 shadow-inner bg-slate-900 no-select cursor-pointer"
+                    onClick={handleLogoClick}
+                    onMouseDown={(e) => e.preventDefault()}
+                  >
+                     {(appMode === 'editor' || (appMode === 'home' && category) || appMode === 'admin') ? (
+                         <div 
+                            className="absolute inset-0 flex items-center justify-center bg-slate-800 text-slate-300 hover:text-amber-400"
+                            onClick={(e) => { e.stopPropagation(); handleBack(); }}
+                         >
+                            <ArrowLeft size={24} />
+                         </div>
+                     ) : (
+                         <img 
+                            src={APP_LOGO_URL} 
+                            alt="Logo" 
+                            className="w-full h-full object-cover opacity-90" 
+                            draggable="false"
+                            onContextMenu={(e) => e.preventDefault()}
+                         />
+                     )}
+                  </div>
+                  <div className="cursor-pointer" onClick={handleBack}>
+                      <h1 className="font-bold text-lg tracking-wide text-[#1e3a8a] font-serif hover:text-amber-400 transition-colors">Yeshivas Zerach</h1>
+                      <p className="text-[10px] uppercase tracking-widest text-slate-500 font-medium">Design Studio</p>
+                  </div>
+                </div>
+                
+                {appMode === 'editor' && (
+                    <button 
+                      onClick={handleDownload}
+                      className="bg-gradient-to-r from-amber-600 to-amber-500 text-white px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-[0_0_15px_-3px_rgba(245,158,11,0.4)] hover:shadow-[0_0_20px_-3px_rgba(245,158,11,0.6)] hover:scale-105 active:scale-95 transition-all duration-300 border border-amber-400/20"
+                    >
+                      <Download size={14} />
+                      Save
+                    </button>
+                )}
+              </header>
+
+              {/* --- Main Content --- */}
+              <main className="max-w-md mx-auto pt-28 px-4 flex flex-col gap-8 min-h-screen">
+                
+                {/* --- ADMIN DASHBOARD --- */}
+                {appMode === 'admin' && (
+                    <div className="flex flex-col gap-6 animate-fade-in-up">
+                        <div className="text-center space-y-2 mb-4">
+                            <h2 className="text-2xl font-bold text-amber-500 font-serif">Admin Mode</h2>
+                            <p className="text-slate-400 text-sm">Upload new templates for your users.</p>
+                        </div>
+
+                        <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Template Name</label>
+                                <input 
+                                    type="text" 
+                                    value={newTemplateName}
+                                    onChange={(e) => setNewTemplateName(e.target.value)}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:border-amber-500 outline-none transition-colors"
+                                    placeholder="e.g. New Campaign"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Category</label>
+                                <select 
+                                    value={newTemplateCategory}
+                                    onChange={(e) => setNewTemplateCategory(e.target.value)}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:border-amber-500 outline-none transition-colors"
+                                >
+                                    <option value="templates">Templates (Thank You)</option>
+                                    <option value="content">Content (Appeals)</option>
+                                    <option value="milestones">Milestones</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Background Image</label>
+                                <div 
+                                    onClick={() => fileInputRef.current.click()}
+                                    className="border-2 border-dashed border-slate-700 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:border-amber-500/50 hover:bg-slate-800/50 transition-all"
+                                >
+                                    {newTemplateFile ? (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <Check className="text-green-500" />
+                                            <span className="text-xs text-slate-300">{newTemplateFile.name}</span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <UploadIcon className="text-slate-500" />
+                                            <span className="text-xs text-slate-500">Tap to upload</span>
+                                        </div>
+                                    )}
+                                    <input 
+                                        type="file" 
+                                        ref={fileInputRef}
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) => setNewTemplateFile(e.target.files[0])}
+                                    />
+                                </div>
+                            </div>
+
+                            <button 
+                                onClick={handleAddNewTemplate}
+                                className="w-full bg-amber-600 text-white font-bold py-3 rounded-lg hover:bg-amber-500 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <Plus size={18} /> Add Template
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* --- LANDING SELECTION --- */}
+                {appMode === 'home' && !category && (
+                    <div className="flex flex-col gap-6 animate-fade-in-up">
+                        <div className="text-center space-y-3 mb-4">
+                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-800/50 border border-slate-700 mb-2 shadow-inner">
+                                <Sparkles size={20} className="text-amber-400 animate-pulse" />
+                            </div>
+                            <h2 className="text-3xl font-bold text-white tracking-tight font-serif">Create & Share</h2>
+                            <p className="text-slate-400 text-sm font-medium">Select a category to begin</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 gap-5">
+                            <button 
+                                onClick={() => setCategory('templates')}
+                                className="group relative overflow-hidden bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 p-6 rounded-2xl transition-all duration-500 hover:bg-slate-800 hover:border-amber-500/30 hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.15)] active:scale-[0.98]"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-amber-500/5 to-amber-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                                <div className="flex items-center gap-5 relative z-10">
+                                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-900 to-slate-900 border border-slate-700 flex items-center justify-center text-blue-400 shadow-lg group-hover:scale-110 transition-transform duration-500">
+                                        <Check size={28} />
+                                    </div>
+                                    <div className="text-left">
+                                        <h3 className="text-xl font-bold text-slate-100 group-hover:text-amber-400 transition-colors">Templates</h3>
+                                        <p className="text-xs text-slate-400 mt-1 font-medium tracking-wide uppercase">Thank You & Certificates</p>
+                                    </div>
+                                </div>
+                            </button>
+
+                            <button 
+                                onClick={() => setCategory('content')}
+                                className="group relative overflow-hidden bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 p-6 rounded-2xl transition-all duration-500 hover:bg-slate-800 hover:border-amber-500/30 hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.15)] delay-100 animate-fade-in-up active:scale-[0.98]"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-amber-500/5 to-amber-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                                <div className="flex items-center gap-5 relative z-10">
+                                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-900 to-slate-900 border border-slate-700 flex items-center justify-center text-amber-500 shadow-lg group-hover:scale-110 transition-transform duration-500">
+                                        <FileText size={28} />
+                                    </div>
+                                    <div className="text-left">
+                                        <h3 className="text-xl font-bold text-slate-100 group-hover:text-amber-400 transition-colors">Content</h3>
+                                        <p className="text-xs text-slate-400 mt-1 font-medium tracking-wide uppercase">Status Spam Content</p>
+                                    </div>
+                                </div>
+                            </button>
+
+                            <button 
+                                onClick={() => setCategory('milestones')}
+                                className="group relative overflow-hidden bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 p-6 rounded-2xl transition-all duration-500 hover:bg-slate-800 hover:border-amber-500/30 hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.15)] delay-200 animate-fade-in-up active:scale-[0.98]"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-amber-500/5 to-amber-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                                <div className="flex items-center gap-5 relative z-10">
+                                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-900 to-slate-900 border border-slate-700 flex items-center justify-center text-purple-400 shadow-lg group-hover:scale-110 transition-transform duration-500">
+                                        <Trophy size={28} />
+                                    </div>
+                                    <div className="text-left">
+                                        <h3 className="text-xl font-bold text-slate-100 group-hover:text-amber-400 transition-colors">Milestones</h3>
+                                        <p className="text-xs text-slate-400 mt-1 font-medium tracking-wide uppercase">Campaign Goals & Updates</p>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* --- GRID VIEW --- */}
+                {appMode === 'home' && category && (
+                    <div className="flex flex-col gap-6 animate-scale-in">
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-800/50">
+                            <h2 className="text-2xl font-bold text-slate-100 capitalize font-serif">{category}</h2>
+                            <span className="text-[10px] font-bold tracking-wider text-slate-400 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+                                {templates.filter(t => t.category === category).length} DESIGNS
+                            </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-5">
+                            {templates.filter(t => t.category === category).map((t, i) => (
+                                <button
+                                    key={t.id}
+                                    onClick={() => handleTemplateSelect(t.id)}
+                                    style={{ animationDelay: `${i * 100}ms` }}
+                                    className="group relative aspect-[5/7] rounded-xl overflow-hidden border border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:shadow-[0_0_30px_-10px_rgba(245,158,11,0.2)] transition-all duration-500 animate-fade-in-up"
+                                >
+                                    <div className="absolute inset-0 opacity-80 group-hover:opacity-100 transition-opacity duration-500">
+                                        <TemplateThumbnail 
+                                            template={t} 
+                                            logo={logoImage} 
+                                            decoration={decorationImage} 
+                                            extra={{}}
+                                        />
+                                    </div>
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
+                                    <div className="absolute inset-x-0 bottom-0 p-3 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                                        <span className="text-slate-200 text-xs font-bold block text-center truncate tracking-wide group-hover:text-amber-400 transition-colors">{t.name}</span>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* --- EDITOR VIEW --- */}
+                {appMode === 'editor' && (
+                    <>
+                        <div 
+                            ref={containerRef} 
+                            className="relative w-full aspect-[5/7] bg-slate-800 rounded-lg overflow-hidden shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] ring-1 ring-slate-700 group select-none animate-scale-in"
+                        >
+                            <canvas 
+                            ref={canvasRef}
+                            onClick={handleCanvasClick}
+                            width={CANVAS_WIDTH}
+                            height={canvasHeight}
+                            className="w-full h-full object-contain cursor-pointer tap-highlight-transparent"
+                            />
+
+                            {activeFieldKey && (
+                                <input
+                                    ref={overlayInputRef}
+                                    type="text"
+                                    value={formData[activeFieldKey] || ''}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, [activeFieldKey]: e.target.value }))}
+                                    onBlur={() => setActiveFieldKey(null)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') setActiveFieldKey(null); }}
+                                    placeholder={activeFieldProps?.placeholder}
+                                    className="absolute bg-slate-900/80 backdrop-blur-md border border-amber-500/50 rounded-lg px-4 py-2 text-center outline-none focus:bg-slate-900/90 focus:border-amber-400 focus:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all duration-300"
+                                    style={getOverlayStyle()}
+                                    autoFocus
+                                />
+                            )}
+                            
+                            {!logoImage && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-slate-950 z-10 pointer-events-none">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <RefreshCw className="animate-spin text-amber-500" />
+                                        <span className="text-xs font-bold tracking-widest text-slate-500 uppercase">Loading Assets</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {activeTemplate?.getFields(canvasHeight).length > 0 && (
+                            <div className="text-center animate-fade-in delay-300">
+                                <p className="text-amber-500/80 text-xs font-bold uppercase tracking-widest animate-pulse">
+                                    Tap text to edit
+                                </p>
+                            </div>
+                        )}
+                    </>
+                )}
+              </main>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<YeshivasZerachApp />);
+    </script>
+</body>
+</html>
