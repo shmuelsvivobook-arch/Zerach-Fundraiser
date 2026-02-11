@@ -77,7 +77,7 @@
         const Trash2 = (props) => <Icon {...props}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></Icon>;
 
         // --- Configuration ---
-        const CANVAS_WIDTH = 1080;
+        const DEFAULT_WIDTH = 1080;
         const DEFAULT_HEIGHT = 1512; // 5:7 aspect ratio baseline
         const LOGO_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1768422570/Zerach_Full_Logo_Package_-_standard_online_use_2_260114_165502_2_zprn5m_w7pkxj.png";
         const APP_LOGO_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1768416609/copy_of_zerach_full_logo_package_-_standard_online_use_2_260114_165502_2_zprn5m_c1d92b.jpg";
@@ -370,8 +370,10 @@
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
                 const scale = 0.25; 
-                const logicW = 1080;
-                const logicH = 1512;
+                
+                // Use template-specific dimensions or defaults
+                const logicW = template.width || DEFAULT_WIDTH;
+                const logicH = template.height || DEFAULT_HEIGHT;
                 
                 canvas.width = logicW * scale;
                 canvas.height = logicH * scale;
@@ -416,11 +418,16 @@
           const [milestoneImages, setMilestoneImages] = useState({});
 
           const [containerWidth, setContainerWidth] = useState(0);
-          const canvasHeight = 1512;
           const canvasRef = useRef(null);
           const containerRef = useRef(null);
           const overlayInputRef = useRef(null);
           const fileInputRef = useRef(null);
+
+          // Derived State
+          const activeTemplate = templates.find(t => t.id === selectedTemplate);
+          // Determine canvas dimensions dynamically based on the selected template (prioritize stored dimensions, fallback to defaults)
+          const canvasWidth = activeTemplate?.width || DEFAULT_WIDTH;
+          const canvasHeight = activeTemplate?.height || DEFAULT_HEIGHT;
 
           // Load Assets
           useEffect(() => {
@@ -530,21 +537,27 @@
                   img.onload = () => {
                       const newId = `custom-${Date.now()}`;
                       
-                      const aspectRatio = img.height / img.width;
-                      const dynamicHeight = CANVAS_WIDTH * aspectRatio;
+                      // Use NATURAL dimensions
+                      const imgWidth = img.width;
+                      const imgHeight = img.height;
+                      
+                      // Proportional font scaling (relative to 1080px base)
+                      const scaleFactor = imgWidth / 1080;
+                      const baseFontSize = 100 * scaleFactor;
 
                       const newTemplate = {
                           id: newId,
                           name: newTemplateName,
                           category: newTemplateCategory,
-                          height: dynamicHeight, 
+                          width: imgWidth,  // STORE WIDTH
+                          height: imgHeight, // STORE HEIGHT
                           getFields: (h) => {
                               // Only allow editing for "templates" category
                               if (newTemplateCategory === 'templates') {
                                   return [{ 
                                       key: 'name', 
                                       y: h * 0.5, 
-                                      size: 100, 
+                                      size: baseFontSize, 
                                       color: '#000000', 
                                       font: FONT_HEADER, 
                                       placeholder: "Type Text Here" 
@@ -554,16 +567,15 @@
                               return [];
                           },
                           render: (ctx, width, height, data, logo) => {
-                              const scale = Math.max(width / img.width, height / img.height);
-                              const x = (width / 2) - (img.width / 2) * scale;
-                              const y = (height / 2) - (img.height / 2) * scale;
-                              ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                              // Draw image filling the EXACT dimensions
+                              ctx.drawImage(img, 0, 0, width, height);
 
                               if (!data.hideText && newTemplateCategory === 'templates') {
                                   ctx.save();
                                   ctx.shadowColor = "rgba(255,255,255,0.8)";
                                   ctx.shadowBlur = 10;
-                                  drawFitText(ctx, data.name || "Type Text Here", width / 2, height * 0.5, width - 150, FONT_HEADER, 100, '#000000');
+                                  // Text placement relative to center
+                                  drawFitText(ctx, data.name || "Type Text Here", width / 2, height * 0.5, width - (150 * scaleFactor), FONT_HEADER, baseFontSize, '#000000');
                                   ctx.restore();
                               }
                           }
@@ -583,6 +595,10 @@
           const handleDeleteTemplate = (id) => {
               if (window.confirm("Are you sure you want to delete this template?")) {
                   setTemplates(prev => prev.filter(t => t.id !== id));
+                  // If we deleted the selected template, switch back to home or safe default
+                  if (selectedTemplate === id) {
+                      setSelectedTemplate(INITIAL_TEMPLATES[0].id);
+                  }
               }
           };
 
@@ -590,13 +606,13 @@
             const canvas = canvasRef.current;
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, CANVAS_WIDTH, canvasHeight);
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight); // Use dynamic dimensions
 
             const template = templates.find(t => t.id === selectedTemplate);
             if (template && template.render) {
               template.render(
                 ctx, 
-                CANVAS_WIDTH, 
+                canvasWidth, // Pass dynamic width
                 canvasHeight, 
                 { ...formData, hideText: false }, 
                 logoImage,
@@ -604,7 +620,7 @@
                 { coloredLogo: coloredLogoImage, ...milestoneImages }
               );
             }
-          }, [selectedTemplate, formData, logoImage, decorationImage, coloredLogoImage, milestoneImages, templates, canvasHeight]);
+          }, [selectedTemplate, formData, logoImage, decorationImage, coloredLogoImage, milestoneImages, templates, canvasWidth, canvasHeight]);
 
           useEffect(() => {
             if (appMode === 'editor') {
@@ -614,7 +630,7 @@
                     setTimeout(draw, 100);
                 }
             }
-          }, [draw, appMode, canvasHeight]);
+          }, [draw, appMode, canvasWidth, canvasHeight]); // Re-draw when dimensions change
 
           useEffect(() => {
             if (activeFieldKey && overlayInputRef.current) {
@@ -658,7 +674,7 @@
             const ctx = canvas.getContext('2d');
             const template = templates.find(t => t.id === selectedTemplate);
             template.render(
-                ctx, CANVAS_WIDTH, canvasHeight, 
+                ctx, canvasWidth, canvasHeight, 
                 { ...formData, hideText: false }, 
                 logoImage, decorationImage, 
                 { coloredLogo: coloredLogoImage, ...milestoneImages }
@@ -682,7 +698,7 @@
             const field = fields.find(f => f.key === activeFieldKey);
             if (!field) return { display: 'none' };
 
-            const scale = containerWidth / CANVAS_WIDTH;
+            const scale = containerWidth / canvasWidth; // Scale relative to current width
             const topPct = (field.y / canvasHeight) * 100;
             const fontSize = field.size * scale;
 
@@ -698,7 +714,6 @@
             };
           };
 
-          const activeTemplate = templates.find(t => t.id === selectedTemplate);
           const activeFieldProps = activeTemplate?.getFields(canvasHeight).find(f => f.key === activeFieldKey);
 
           return (
@@ -827,7 +842,6 @@
                                     <div key={t.id} className="flex items-center justify-between bg-slate-900 p-3 rounded-lg border border-slate-700">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-10 bg-slate-800 rounded border border-slate-600 overflow-hidden">
-                                                {/* Mini preview logic reused roughly or simple div */}
                                                 <div className="w-full h-full bg-slate-700" /> 
                                             </div>
                                             <div>
@@ -927,19 +941,28 @@
                                     key={t.id}
                                     onClick={() => handleTemplateSelect(t.id)}
                                     style={{ animationDelay: `${i * 100}ms` }}
-                                    className="group relative aspect-[5/7] rounded-xl overflow-hidden border border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:shadow-[0_0_30px_-10px_rgba(245,158,11,0.2)] transition-all duration-500 animate-fade-in-up"
+                                    className="group relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:shadow-[0_0_30px_-10px_rgba(245,158,11,0.2)] transition-all duration-500 animate-fade-in-up"
                                 >
-                                    <div className="absolute inset-0 opacity-80 group-hover:opacity-100 transition-opacity duration-500">
-                                        <TemplateThumbnail 
-                                            template={t} 
-                                            logo={logoImage} 
-                                            decoration={decorationImage} 
-                                            extra={{ coloredLogo: coloredLogoImage, ...milestoneImages }}
-                                        />
-                                    </div>
-                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
-                                    <div className="absolute inset-x-0 bottom-0 p-3 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                                        <span className="text-slate-200 text-xs font-bold block text-center truncate tracking-wide group-hover:text-amber-400 transition-colors">{t.name}</span>
+                                    {/* Aspect Ratio style removed here to allow image natural shape in grid logic if we wanted, 
+                                        but for thumbnail consistency we typically want fixed aspect. 
+                                        However, TemplateThumbnail forces a 5:7 canvas. 
+                                        For custom uploads with different AR, the thumbnail might look squashed if we force it.
+                                        Let's update TemplateThumbnail to be smarter or just let CSS handle it.
+                                        For now, keeping 5/7 grid aspect for uniformity.
+                                    */}
+                                    <div className="aspect-[5/7]">
+                                        <div className="absolute inset-0 opacity-80 group-hover:opacity-100 transition-opacity duration-500">
+                                            <TemplateThumbnail 
+                                                template={t} 
+                                                logo={logoImage} 
+                                                decoration={decorationImage} 
+                                                extra={{ coloredLogo: coloredLogoImage, ...milestoneImages }}
+                                            />
+                                        </div>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
+                                        <div className="absolute inset-x-0 bottom-0 p-3 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                                            <span className="text-slate-200 text-xs font-bold block text-center truncate tracking-wide group-hover:text-amber-400 transition-colors">{t.name}</span>
+                                        </div>
                                     </div>
                                 </button>
                             ))}
@@ -953,13 +976,13 @@
                         <div 
                             ref={containerRef} 
                             // Style allows dynamic height based on aspect ratio
-                            style={{ aspectRatio: `${CANVAS_WIDTH} / ${canvasHeight}` }}
+                            style={{ aspectRatio: `${canvasWidth} / ${canvasHeight}` }}
                             className="relative w-full bg-slate-800 rounded-lg overflow-hidden shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] ring-1 ring-slate-700 group select-none animate-scale-in"
                         >
                             <canvas 
                             ref={canvasRef}
                             onClick={handleCanvasClick}
-                            width={CANVAS_WIDTH}
+                            width={canvasWidth}
                             height={canvasHeight}
                             className="w-full h-full object-contain cursor-pointer tap-highlight-transparent"
                             />
