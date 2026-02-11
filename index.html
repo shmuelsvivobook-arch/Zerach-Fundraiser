@@ -51,7 +51,7 @@
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100">
+<body class="bg-slate-950 text-slate-100 touch-manipulation">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -80,6 +80,15 @@
         const LOGO_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1768422570/Zerach_Full_Logo_Package_-_standard_online_use_2_260114_165502_2_zprn5m_w7pkxj.png";
         const APP_LOGO_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1768416609/copy_of_zerach_full_logo_package_-_standard_online_use_2_260114_165502_2_zprn5m_c1d92b.jpg";
         const DECORATION_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1769418531/Gemini_Generated_Image_4mrufu4mrufu4mru_1_1_sdfjzv.png";
+        const COLORED_LOGO_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1768404664/Full-colored-background-e1749387371723_u54kro.png";
+
+        // Milestone Images
+        const MILESTONE_100_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801631/IMG_3739_sr62tx.png";
+        const MILESTONE_75_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801626/IMG_3738_xhaxw0.png";
+        const MILESTONE_50_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801624/IMG_3737_vt3snt.png";
+        const MILESTONE_25_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801627/IMG_3736_clgcz7.png";
+        const MILESTONE_THANK_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801613/IMG_3741_w7fidp.png";
+        const MILESTONE_BONUS_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801610/IMG_3740_byjfcm.png";
 
         // --- Fonts ---
         const FONT_HEADER = "Cinzel";
@@ -208,21 +217,19 @@
             category: 'milestones',
             getFields: (h) => [{ key: 'name', y: h * 0.55, size: 120, color: '#1e293b', font: FONT_HEADER, placeholder: "Type Amount" }],
             render: (ctx, width, height, data, logo) => {
-              // Silver Gradient Background
               const grad = ctx.createLinearGradient(0, 0, width, height);
-              grad.addColorStop(0, '#e2e8f0'); // Slate 200
-              grad.addColorStop(1, '#94a3b8'); // Slate 400
+              grad.addColorStop(0, '#e2e8f0'); 
+              grad.addColorStop(1, '#94a3b8'); 
               ctx.fillStyle = grad;
               ctx.fillRect(0, 0, width, height);
 
-              // Circular Progress Graphic (Mock)
               ctx.strokeStyle = '#ffffff';
               ctx.lineWidth = 30;
               ctx.beginPath();
               ctx.arc(width/2, height * 0.45, 300, 0, 2 * Math.PI);
               ctx.stroke();
               
-              ctx.strokeStyle = '#3b82f6'; // Blue Progress
+              ctx.strokeStyle = '#3b82f6';
               ctx.lineWidth = 30;
               ctx.beginPath();
               ctx.arc(width/2, height * 0.45, 300, -Math.PI / 2, Math.PI);
@@ -246,6 +253,108 @@
               ctx.font = `italic 40px ${FONT_BODY}`;
               ctx.fillStyle = '#475569';
               ctx.fillText("RAISED SO FAR", width / 2, height * 0.48);
+            }
+          },
+          {
+            id: 'milestone-25',
+            name: '25% Reached',
+            category: 'milestones',
+            getFields: (h) => [],
+            render: (ctx, width, height, data, logo, decoration, extra) => {
+                const img = extra?.m25;
+                if (img) {
+                    const scale = Math.max(width / img.width, height / img.height);
+                    const x = (width / 2) - (img.width / 2) * scale;
+                    const y = (height / 2) - (img.height / 2) * scale;
+                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                } else {
+                    ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
+                }
+            }
+          },
+          {
+            id: 'milestone-50',
+            name: '50% Reached',
+            category: 'milestones',
+            getFields: (h) => [],
+            render: (ctx, width, height, data, logo, decoration, extra) => {
+                const img = extra?.m50;
+                if (img) {
+                    const scale = Math.max(width / img.width, height / img.height);
+                    const x = (width / 2) - (img.width / 2) * scale;
+                    const y = (height / 2) - (img.height / 2) * scale;
+                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                } else {
+                    ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
+                }
+            }
+          },
+          {
+            id: 'milestone-75',
+            name: '75% Reached',
+            category: 'milestones',
+            getFields: (h) => [],
+            render: (ctx, width, height, data, logo, decoration, extra) => {
+                const img = extra?.m75;
+                if (img) {
+                    const scale = Math.max(width / img.width, height / img.height);
+                    const x = (width / 2) - (img.width / 2) * scale;
+                    const y = (height / 2) - (img.height / 2) * scale;
+                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                } else {
+                    ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
+                }
+            }
+          },
+          {
+            id: 'milestone-100',
+            name: '100% Reached',
+            category: 'milestones',
+            getFields: (h) => [],
+            render: (ctx, width, height, data, logo, decoration, extra) => {
+                const img = extra?.m100;
+                if (img) {
+                    const scale = Math.max(width / img.width, height / img.height);
+                    const x = (width / 2) - (img.width / 2) * scale;
+                    const y = (height / 2) - (img.height / 2) * scale;
+                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                } else {
+                    ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
+                }
+            }
+          },
+          {
+            id: 'milestone-bonus',
+            name: 'Bonus Goal',
+            category: 'milestones',
+            getFields: (h) => [],
+            render: (ctx, width, height, data, logo, decoration, extra) => {
+                const img = extra?.bonus;
+                if (img) {
+                    const scale = Math.max(width / img.width, height / img.height);
+                    const x = (width / 2) - (img.width / 2) * scale;
+                    const y = (height / 2) - (img.height / 2) * scale;
+                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                } else {
+                    ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
+                }
+            }
+          },
+          {
+            id: 'milestone-thank',
+            name: 'Thank You',
+            category: 'milestones',
+            getFields: (h) => [],
+            render: (ctx, width, height, data, logo, decoration, extra) => {
+                const img = extra?.thank;
+                if (img) {
+                    const scale = Math.max(width / img.width, height / img.height);
+                    const x = (width / 2) - (img.width / 2) * scale;
+                    const y = (height / 2) - (img.height / 2) * scale;
+                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                } else {
+                    ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
+                }
             }
           }
         ];
@@ -301,6 +410,8 @@
           // Asset State
           const [logoImage, setLogoImage] = useState(null);
           const [decorationImage, setDecorationImage] = useState(null);
+          const [coloredLogoImage, setColoredLogoImage] = useState(null);
+          const [milestoneImages, setMilestoneImages] = useState({});
 
           const [containerWidth, setContainerWidth] = useState(0);
           const canvasHeight = 1512;
@@ -320,6 +431,28 @@
             deco.src = DECORATION_URL;
             deco.crossOrigin = "anonymous";
             deco.onload = () => setDecorationImage(deco);
+
+            const colLogo = new Image();
+            colLogo.src = COLORED_LOGO_URL;
+            colLogo.crossOrigin = "anonymous";
+            colLogo.onload = () => setColoredLogoImage(colLogo);
+
+            // Load Milestone Images
+            const milestoneUrls = {
+                m100: MILESTONE_100_URL,
+                m75: MILESTONE_75_URL,
+                m50: MILESTONE_50_URL,
+                m25: MILESTONE_25_URL,
+                thank: MILESTONE_THANK_URL,
+                bonus: MILESTONE_BONUS_URL
+            };
+
+            Object.entries(milestoneUrls).forEach(([key, url]) => {
+                const mImg = new Image();
+                mImg.src = url;
+                mImg.crossOrigin = "anonymous";
+                mImg.onload = () => setMilestoneImages(prev => ({ ...prev, [key]: mImg }));
+            });
           }, []);
 
           useEffect(() => {
@@ -336,32 +469,34 @@
 
           // --- Secret Admin Trigger ---
           const handleLogoClick = (e) => {
-              // CRITICAL: Prevent default browser behavior (drag, select, context menu)
               e.preventDefault(); 
               e.stopPropagation(); 
               
-              setLogoClickCount(prev => prev + 1);
-              
-              if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
-              
-              // Reset count if idle for 1 second
-              clickTimeoutRef.current = setTimeout(() => {
-                  setLogoClickCount(0);
-              }, 1000);
-          };
-
-          useEffect(() => {
-              if (logoClickCount >= 5) {
-                  const pwd = prompt("Enter Admin Password:");
-                  if (pwd === "skravfund") {
-                      setAppMode('admin');
-                      setLogoClickCount(0);
-                  } else {
-                      alert("Incorrect Password");
-                      setLogoClickCount(0);
+              setLogoClickCount(prev => {
+                  const newCount = prev + 1;
+                  
+                  if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+                  
+                  if (newCount >= 5) {
+                      setTimeout(() => {
+                          const pwd = prompt("Enter Admin Password:");
+                          if (pwd === "skravfund") {
+                              setAppMode('admin');
+                          } else {
+                              alert("Incorrect Password");
+                          }
+                          setLogoClickCount(0); 
+                      }, 50);
+                      return 0; 
                   }
-              }
-          }, [logoClickCount]);
+                  
+                  clickTimeoutRef.current = setTimeout(() => {
+                      setLogoClickCount(0);
+                  }, 1000);
+                  
+                  return newCount;
+              });
+          };
 
           // --- Template Selection & Navigation ---
           const handleTemplateSelect = (id) => {
@@ -445,10 +580,10 @@
                 { ...formData, hideText: false }, 
                 logoImage,
                 decorationImage,
-                {}
+                { coloredLogo: coloredLogoImage, ...milestoneImages }
               );
             }
-          }, [selectedTemplate, formData, logoImage, decorationImage, templates]);
+          }, [selectedTemplate, formData, logoImage, decorationImage, coloredLogoImage, milestoneImages, templates]);
 
           useEffect(() => {
             if (appMode === 'editor') {
@@ -501,7 +636,7 @@
                 ctx, CANVAS_WIDTH, canvasHeight, 
                 { ...formData, hideText: false }, 
                 logoImage, decorationImage, 
-                {}
+                { coloredLogo: coloredLogoImage, ...milestoneImages }
             );
 
             try {
@@ -563,7 +698,7 @@
                          <img 
                             src={APP_LOGO_URL} 
                             alt="Logo" 
-                            className="w-full h-full object-cover opacity-90" 
+                            className="w-full h-full object-cover opacity-90 pointer-events-none" 
                             draggable="false"
                             onContextMenu={(e) => e.preventDefault()}
                          />
@@ -745,7 +880,7 @@
                                             template={t} 
                                             logo={logoImage} 
                                             decoration={decorationImage} 
-                                            extra={{}}
+                                            extra={{ coloredLogo: coloredLogoImage, ...milestoneImages }}
                                         />
                                     </div>
                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
