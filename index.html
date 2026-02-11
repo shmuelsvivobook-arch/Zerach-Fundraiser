@@ -85,12 +85,22 @@
         const COLORED_LOGO_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1768404664/Full-colored-background-e1749387371723_u54kro.png";
 
         // Milestone Images
-        const MILESTONE_100_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801631/IMG_3739_sr62tx.png";
-        const MILESTONE_75_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801626/IMG_3738_xhaxw0.png";
-        const MILESTONE_50_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801624/IMG_3737_vt3snt.png";
-        const MILESTONE_25_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801627/IMG_3736_clgcz7.png";
-        const MILESTONE_THANK_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801613/IMG_3741_w7fidp.png";
-        const MILESTONE_BONUS_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801610/IMG_3740_byjfcm.png";
+        const MILESTONE_URLS = [
+            { id: 'milestone-100', url: "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801631/IMG_3739_sr62tx.png", name: '100% Reached' },
+            { id: 'milestone-75', url: "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801626/IMG_3738_xhaxw0.png", name: '75% Reached' },
+            { id: 'milestone-50', url: "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801624/IMG_3737_vt3snt.png", name: '50% Reached' },
+            { id: 'milestone-25', url: "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801627/IMG_3736_clgcz7.png", name: '25% Reached' },
+            { id: 'milestone-thank', url: "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801613/IMG_3741_w7fidp.png", name: 'Thank You' },
+            { id: 'milestone-bonus', url: "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801610/IMG_3740_byjfcm.png", name: 'Bonus Goal' }
+        ];
+
+        // Content Images
+        const CONTENT_URLS = [
+            { id: 'content-roast', url: "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770804938/WhatsApp_Image_2026-02-11_at_5.10.55_AM_c7lqxi.jpg", name: 'Roast' },
+            { id: 'content-build', url: "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770804937/WhatsApp_Image_2026-02-11_at_5.14.33_AM_h9jqbn.jpg", name: 'Build' },
+            { id: 'content-list', url: "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770804936/WhatsApp_Image_2026-02-11_at_5.13.39_AM_xtf3nl.jpg", name: 'The List' },
+            { id: 'content-charge', url: "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770804936/WhatsApp_Image_2026-02-11_at_5.14.33_AM_1_psrtnn.jpg", name: 'Charge Phone' }
+        ];
 
         // --- Fonts ---
         const FONT_HEADER = "Cinzel";
@@ -213,152 +223,38 @@
               ctx.fillText("DONATE NOW", width/2, height * 0.82 + 65);
             }
           },
-          {
-            id: 'silver-milestone',
-            name: 'Silver Milestone',
-            category: 'milestones',
-            getFields: (h) => [], // Static for milestones
-            render: (ctx, width, height, data, logo) => {
-              const grad = ctx.createLinearGradient(0, 0, width, height);
-              grad.addColorStop(0, '#e2e8f0'); 
-              grad.addColorStop(1, '#94a3b8'); 
-              ctx.fillStyle = grad;
-              ctx.fillRect(0, 0, width, height);
-
-              ctx.strokeStyle = '#ffffff';
-              ctx.lineWidth = 30;
-              ctx.beginPath();
-              ctx.arc(width/2, height * 0.45, 300, 0, 2 * Math.PI);
-              ctx.stroke();
-              
-              ctx.strokeStyle = '#3b82f6'; // Blue Progress
-              ctx.lineWidth = 30;
-              ctx.beginPath();
-              ctx.arc(width/2, height * 0.45, 300, -Math.PI / 2, Math.PI);
-              ctx.stroke();
-
-              if (logo) {
-                const logoW = 250;
-                const logoH = (logo.height / logo.width) * logoW;
-                ctx.drawImage(logo, (width - logoW) / 2, height * 0.10, logoW, logoH);
+          // Spread Milestone Templates
+          ...MILESTONE_URLS.map(m => ({
+              id: m.id,
+              name: m.name,
+              category: 'milestones',
+              getFields: (h) => [], // No editing
+              render: (ctx, width, height, data, logo, decoration, extra) => {
+                  const img = extra?.[m.id];
+                  if (img) {
+                      ctx.drawImage(img, 0, 0, width, height);
+                  } else {
+                      ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
+                      ctx.fillStyle = '#fff'; ctx.fillText("Loading...", 50, 50);
+                  }
               }
-
-              ctx.fillStyle = '#1e3a8a';
-              ctx.font = `bold 60px ${FONT_BODY}`;
-              ctx.textAlign = 'center';
-              ctx.fillText("MILESTONE REACHED", width / 2, height * 0.80);
-
-              if (!data.hideText) {
-                 drawFitText(ctx, data.name || "$180,000", width / 2, height * 0.55, width - 200, FONT_HEADER, 120, '#1e293b');
+          })),
+          // Spread Content Templates
+          ...CONTENT_URLS.map(c => ({
+              id: c.id,
+              name: c.name,
+              category: 'content',
+              getFields: (h) => [], // No editing
+              render: (ctx, width, height, data, logo, decoration, extra) => {
+                  const img = extra?.[c.id];
+                  if (img) {
+                      ctx.drawImage(img, 0, 0, width, height);
+                  } else {
+                      ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
+                      ctx.fillStyle = '#fff'; ctx.fillText("Loading...", 50, 50);
+                  }
               }
-              
-              ctx.font = `italic 40px ${FONT_BODY}`;
-              ctx.fillStyle = '#475569';
-              ctx.fillText("RAISED SO FAR", width / 2, height * 0.48);
-            }
-          },
-          {
-            id: 'milestone-25',
-            name: '25% Reached',
-            category: 'milestones',
-            getFields: (h) => [],
-            render: (ctx, width, height, data, logo, decoration, extra) => {
-                const img = extra?.m25;
-                if (img) {
-                    const scale = Math.max(width / img.width, height / img.height);
-                    const x = (width / 2) - (img.width / 2) * scale;
-                    const y = (height / 2) - (img.height / 2) * scale;
-                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-                } else {
-                    ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
-                }
-            }
-          },
-          {
-            id: 'milestone-50',
-            name: '50% Reached',
-            category: 'milestones',
-            getFields: (h) => [],
-            render: (ctx, width, height, data, logo, decoration, extra) => {
-                const img = extra?.m50;
-                if (img) {
-                    const scale = Math.max(width / img.width, height / img.height);
-                    const x = (width / 2) - (img.width / 2) * scale;
-                    const y = (height / 2) - (img.height / 2) * scale;
-                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-                } else {
-                    ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
-                }
-            }
-          },
-          {
-            id: 'milestone-75',
-            name: '75% Reached',
-            category: 'milestones',
-            getFields: (h) => [],
-            render: (ctx, width, height, data, logo, decoration, extra) => {
-                const img = extra?.m75;
-                if (img) {
-                    const scale = Math.max(width / img.width, height / img.height);
-                    const x = (width / 2) - (img.width / 2) * scale;
-                    const y = (height / 2) - (img.height / 2) * scale;
-                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-                } else {
-                    ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
-                }
-            }
-          },
-          {
-            id: 'milestone-100',
-            name: '100% Reached',
-            category: 'milestones',
-            getFields: (h) => [],
-            render: (ctx, width, height, data, logo, decoration, extra) => {
-                const img = extra?.m100;
-                if (img) {
-                    const scale = Math.max(width / img.width, height / img.height);
-                    const x = (width / 2) - (img.width / 2) * scale;
-                    const y = (height / 2) - (img.height / 2) * scale;
-                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-                } else {
-                    ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
-                }
-            }
-          },
-          {
-            id: 'milestone-bonus',
-            name: 'Bonus Goal',
-            category: 'milestones',
-            getFields: (h) => [],
-            render: (ctx, width, height, data, logo, decoration, extra) => {
-                const img = extra?.bonus;
-                if (img) {
-                    const scale = Math.max(width / img.width, height / img.height);
-                    const x = (width / 2) - (img.width / 2) * scale;
-                    const y = (height / 2) - (img.height / 2) * scale;
-                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-                } else {
-                    ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
-                }
-            }
-          },
-          {
-            id: 'milestone-thank',
-            name: 'Thank You',
-            category: 'milestones',
-            getFields: (h) => [],
-            render: (ctx, width, height, data, logo, decoration, extra) => {
-                const img = extra?.thank;
-                if (img) {
-                    const scale = Math.max(width / img.width, height / img.height);
-                    const x = (width / 2) - (img.width / 2) * scale;
-                    const y = (height / 2) - (img.height / 2) * scale;
-                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-                } else {
-                    ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
-                }
-            }
-          }
+          }))
         ];
 
         // --- Component: Template Thumbnail ---
@@ -398,30 +294,24 @@
           const [appMode, setAppMode] = useState('home'); 
           const [category, setCategory] = useState(null); 
           const [templates, setTemplates] = useState(INITIAL_TEMPLATES);
-          const [selectedTemplate, setSelectedTemplate] = useState(templates[0].id);
+          const [selectedTemplate, setSelectedTemplate] = useState(INITIAL_TEMPLATES[0].id);
           const [formData, setFormData] = useState({ name: '', amount: '' });
           const [activeFieldKey, setActiveFieldKey] = useState(null); 
           
-          // Admin Mode State
-          const [logoClickCount, setLogoClickCount] = useState(0);
-          const clickTimeoutRef = useRef(null);
-          
           // New Template Upload State
-          const [newTemplateName, setNewTemplateName] = useState("");
-          const [newTemplateCategory, setNewTemplateCategory] = useState("templates");
-          const [newTemplateFile, setNewTemplateFile] = useState(null);
+          // (No admin logic, just static uploads available via props)
 
           // Asset State
           const [logoImage, setLogoImage] = useState(null);
           const [decorationImage, setDecorationImage] = useState(null);
           const [coloredLogoImage, setColoredLogoImage] = useState(null);
           const [milestoneImages, setMilestoneImages] = useState({});
+          const [contentImages, setContentImages] = useState({});
 
           const [containerWidth, setContainerWidth] = useState(0);
           const canvasRef = useRef(null);
           const containerRef = useRef(null);
           const overlayInputRef = useRef(null);
-          const fileInputRef = useRef(null);
 
           // Derived State
           const activeTemplate = templates.find(t => t.id === selectedTemplate);
@@ -446,21 +336,49 @@
             colLogo.crossOrigin = "anonymous";
             colLogo.onload = () => setColoredLogoImage(colLogo);
 
-            // Load Milestone Images
-            const milestoneUrls = {
-                m100: MILESTONE_100_URL,
-                m75: MILESTONE_75_URL,
-                m50: MILESTONE_50_URL,
-                m25: MILESTONE_25_URL,
-                thank: MILESTONE_THANK_URL,
-                bonus: MILESTONE_BONUS_URL
-            };
-
-            Object.entries(milestoneUrls).forEach(([key, url]) => {
+            // Load Milestone Images & Update Template Dimensions
+            MILESTONE_URLS.forEach((m) => {
                 const mImg = new Image();
-                mImg.src = url;
+                mImg.src = m.url;
                 mImg.crossOrigin = "anonymous";
-                mImg.onload = () => setMilestoneImages(prev => ({ ...prev, [key]: mImg }));
+                mImg.onload = () => {
+                    setMilestoneImages(prev => ({ ...prev, [m.id]: mImg }));
+                    
+                    // Update template dimension based on loaded image
+                    setTemplates(prev => prev.map(t => {
+                        if (t.id === m.id) {
+                            const aspectRatio = mImg.height / mImg.width;
+                            return {
+                                ...t,
+                                width: DEFAULT_WIDTH,
+                                height: DEFAULT_WIDTH * aspectRatio
+                            };
+                        }
+                        return t;
+                    }));
+                };
+            });
+
+            // Load Content Images & Update Dimensions
+            CONTENT_URLS.forEach((c) => {
+                const cImg = new Image();
+                cImg.src = c.url;
+                cImg.crossOrigin = "anonymous";
+                cImg.onload = () => {
+                    setContentImages(prev => ({ ...prev, [c.id]: cImg }));
+                    
+                    setTemplates(prev => prev.map(t => {
+                        if (t.id === c.id) {
+                            const aspectRatio = cImg.height / cImg.width;
+                            return {
+                                ...t,
+                                width: DEFAULT_WIDTH,
+                                height: DEFAULT_WIDTH * aspectRatio
+                            };
+                        }
+                        return t;
+                    }));
+                };
             });
           }, []);
 
@@ -476,37 +394,6 @@
             return () => observer.disconnect();
           }, [appMode]);
 
-          // --- Secret Admin Trigger ---
-          const handleLogoClick = (e) => {
-              e.preventDefault(); 
-              e.stopPropagation(); 
-              
-              setLogoClickCount(prev => {
-                  const newCount = prev + 1;
-                  
-                  if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
-                  
-                  if (newCount >= 5) {
-                      setTimeout(() => {
-                          const pwd = prompt("Enter Admin Password:");
-                          if (pwd === "skravfund") {
-                              setAppMode('admin');
-                          } else {
-                              alert("Incorrect Password");
-                          }
-                          setLogoClickCount(0); 
-                      }, 50);
-                      return 0; 
-                  }
-                  
-                  clickTimeoutRef.current = setTimeout(() => {
-                      setLogoClickCount(0);
-                  }, 1000);
-                  
-                  return newCount;
-              });
-          };
-
           // --- Template Selection & Navigation ---
           const handleTemplateSelect = (id) => {
               setSelectedTemplate(id);
@@ -516,89 +403,10 @@
           };
 
           const handleBack = () => {
-              if (appMode === 'editor' || appMode === 'admin') {
+              if (appMode === 'editor') {
                   setAppMode('home');
               } else if (appMode === 'home' && category) {
                   setCategory(null);
-              }
-          };
-
-          // --- Admin: Add New Template ---
-          const handleAddNewTemplate = () => {
-              if (!newTemplateFile || !newTemplateName) {
-                  alert("Please provide a name and an image.");
-                  return;
-              }
-
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                  const img = new Image();
-                  img.src = e.target.result;
-                  img.onload = () => {
-                      const newId = `custom-${Date.now()}`;
-                      
-                      // Use NATURAL dimensions
-                      const imgWidth = img.width;
-                      const imgHeight = img.height;
-                      
-                      // Proportional font scaling (relative to 1080px base)
-                      const scaleFactor = imgWidth / 1080;
-                      const baseFontSize = 100 * scaleFactor;
-
-                      const newTemplate = {
-                          id: newId,
-                          name: newTemplateName,
-                          category: newTemplateCategory,
-                          width: imgWidth,  // STORE WIDTH
-                          height: imgHeight, // STORE HEIGHT
-                          getFields: (h) => {
-                              // Only allow editing for "templates" category
-                              if (newTemplateCategory === 'templates') {
-                                  return [{ 
-                                      key: 'name', 
-                                      y: h * 0.5, 
-                                      size: baseFontSize, 
-                                      color: '#000000', 
-                                      font: FONT_HEADER, 
-                                      placeholder: "Type Text Here" 
-                                  }];
-                              }
-                              // Content and Milestones are static images
-                              return [];
-                          },
-                          render: (ctx, width, height, data, logo) => {
-                              // Draw image filling the EXACT dimensions
-                              ctx.drawImage(img, 0, 0, width, height);
-
-                              if (!data.hideText && newTemplateCategory === 'templates') {
-                                  ctx.save();
-                                  ctx.shadowColor = "rgba(255,255,255,0.8)";
-                                  ctx.shadowBlur = 10;
-                                  // Text placement relative to center
-                                  drawFitText(ctx, data.name || "Type Text Here", width / 2, height * 0.5, width - (150 * scaleFactor), FONT_HEADER, baseFontSize, '#000000');
-                                  ctx.restore();
-                              }
-                          }
-                      };
-
-                      setTemplates(prev => [...prev, newTemplate]);
-                      alert("Template Added Successfully!");
-                      setNewTemplateName("");
-                      setNewTemplateFile(null);
-                      if(fileInputRef.current) fileInputRef.current.value = "";
-                  };
-              };
-              reader.readAsDataURL(newTemplateFile);
-          };
-
-          // --- Admin: Delete Template ---
-          const handleDeleteTemplate = (id) => {
-              if (window.confirm("Are you sure you want to delete this template?")) {
-                  setTemplates(prev => prev.filter(t => t.id !== id));
-                  // If we deleted the selected template, switch back to home or safe default
-                  if (selectedTemplate === id) {
-                      setSelectedTemplate(INITIAL_TEMPLATES[0].id);
-                  }
               }
           };
 
@@ -606,21 +414,21 @@
             const canvas = canvasRef.current;
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvasWidth, canvasHeight); // Use dynamic dimensions
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
             const template = templates.find(t => t.id === selectedTemplate);
             if (template && template.render) {
               template.render(
                 ctx, 
-                canvasWidth, // Pass dynamic width
+                canvasWidth, 
                 canvasHeight, 
                 { ...formData, hideText: false }, 
                 logoImage,
                 decorationImage,
-                { coloredLogo: coloredLogoImage, ...milestoneImages }
+                { coloredLogo: coloredLogoImage, ...milestoneImages, ...contentImages }
               );
             }
-          }, [selectedTemplate, formData, logoImage, decorationImage, coloredLogoImage, milestoneImages, templates, canvasWidth, canvasHeight]);
+          }, [selectedTemplate, formData, logoImage, decorationImage, coloredLogoImage, milestoneImages, contentImages, templates, canvasWidth, canvasHeight]);
 
           useEffect(() => {
             if (appMode === 'editor') {
@@ -630,7 +438,7 @@
                     setTimeout(draw, 100);
                 }
             }
-          }, [draw, appMode, canvasWidth, canvasHeight]); // Re-draw when dimensions change
+          }, [draw, appMode, canvasWidth, canvasHeight]); 
 
           useEffect(() => {
             if (activeFieldKey && overlayInputRef.current) {
@@ -677,7 +485,7 @@
                 ctx, canvasWidth, canvasHeight, 
                 { ...formData, hideText: false }, 
                 logoImage, decorationImage, 
-                { coloredLogo: coloredLogoImage, ...milestoneImages }
+                { coloredLogo: coloredLogoImage, ...milestoneImages, ...contentImages }
             );
 
             try {
@@ -724,10 +532,9 @@
                 <div className="flex items-center gap-4">
                   <div 
                     className="relative w-14 h-14 rounded-2xl overflow-hidden border border-slate-700 shadow-inner bg-slate-900 no-select cursor-pointer"
-                    onClick={handleLogoClick}
                     onMouseDown={(e) => e.preventDefault()}
                   >
-                     {(appMode === 'editor' || (appMode === 'home' && category) || appMode === 'admin') ? (
+                     {(appMode === 'editor' || (appMode === 'home' && category)) ? (
                          <div 
                             className="absolute inset-0 flex items-center justify-center bg-slate-800 text-slate-300 hover:text-amber-400"
                             onClick={(e) => { e.stopPropagation(); handleBack(); }}
@@ -764,104 +571,6 @@
               {/* --- Main Content --- */}
               <main className="max-w-md mx-auto pt-28 px-4 flex flex-col gap-8 min-h-screen">
                 
-                {/* --- ADMIN DASHBOARD --- */}
-                {appMode === 'admin' && (
-                    <div className="flex flex-col gap-6 animate-fade-in-up">
-                        <div className="text-center space-y-2 mb-4">
-                            <h2 className="text-2xl font-bold text-amber-500 font-serif">Admin Mode</h2>
-                            <p className="text-slate-400 text-sm">Manage and upload templates.</p>
-                        </div>
-
-                        {/* Add New Template Form */}
-                        <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl space-y-4">
-                            <h3 className="text-lg font-bold text-white">Add New</h3>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Template Name</label>
-                                <input 
-                                    type="text" 
-                                    value={newTemplateName}
-                                    onChange={(e) => setNewTemplateName(e.target.value)}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:border-amber-500 outline-none transition-colors"
-                                    placeholder="e.g. New Campaign"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Category</label>
-                                <select 
-                                    value={newTemplateCategory}
-                                    onChange={(e) => setNewTemplateCategory(e.target.value)}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:border-amber-500 outline-none transition-colors"
-                                >
-                                    <option value="templates">Templates (Thank You)</option>
-                                    <option value="content">Content (Appeals)</option>
-                                    <option value="milestones">Milestones</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Background Image</label>
-                                <div 
-                                    onClick={() => fileInputRef.current.click()}
-                                    className="border-2 border-dashed border-slate-700 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:border-amber-500/50 hover:bg-slate-800/50 transition-all"
-                                >
-                                    {newTemplateFile ? (
-                                        <div className="flex flex-col items-center gap-2">
-                                            <Check className="text-green-500" />
-                                            <span className="text-xs text-slate-300">{newTemplateFile.name}</span>
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center gap-2">
-                                            <UploadIcon className="text-slate-500" />
-                                            <span className="text-xs text-slate-500">Tap to upload (Any Aspect Ratio)</span>
-                                        </div>
-                                    )}
-                                    <input 
-                                        type="file" 
-                                        ref={fileInputRef}
-                                        accept="image/*"
-                                        className="hidden"
-                                        onChange={(e) => setNewTemplateFile(e.target.files[0])}
-                                    />
-                                </div>
-                            </div>
-
-                            <button 
-                                onClick={handleAddNewTemplate}
-                                className="w-full bg-amber-600 text-white font-bold py-3 rounded-lg hover:bg-amber-500 transition-colors flex items-center justify-center gap-2"
-                            >
-                                <Plus size={18} /> Add Template
-                            </button>
-                        </div>
-
-                        {/* Manage Existing Templates */}
-                        <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl space-y-4">
-                            <h3 className="text-lg font-bold text-white">Manage Templates</h3>
-                            <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
-                                {templates.map(t => (
-                                    <div key={t.id} className="flex items-center justify-between bg-slate-900 p-3 rounded-lg border border-slate-700">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-10 bg-slate-800 rounded border border-slate-600 overflow-hidden">
-                                                <div className="w-full h-full bg-slate-700" /> 
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-slate-200">{t.name}</p>
-                                                <p className="text-[10px] text-slate-500 uppercase">{t.category}</p>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            onClick={() => handleDeleteTemplate(t.id)}
-                                            className="text-red-400 hover:text-red-300 p-2 hover:bg-red-900/20 rounded-full transition-colors"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
                 {/* --- LANDING SELECTION --- */}
                 {appMode === 'home' && !category && (
                     <div className="flex flex-col gap-6 animate-fade-in-up">
@@ -956,7 +665,7 @@
                                                 template={t} 
                                                 logo={logoImage} 
                                                 decoration={decorationImage} 
-                                                extra={{ coloredLogo: coloredLogoImage, ...milestoneImages }}
+                                                extra={{ coloredLogo: coloredLogoImage, ...milestoneImages, ...contentImages }}
                                             />
                                         </div>
                                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
