@@ -34,14 +34,18 @@
             from { opacity: 0; transform: scale(0.9); }
             to { opacity: 1; transform: scale(1); }
         }
+        @keyframes pulse-subtle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
         .animate-fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
         .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
         .animate-scale-in { animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-pulse-subtle { animation: pulse-subtle 2s infinite; }
         .delay-100 { animation-delay: 100ms; }
         .delay-200 { animation-delay: 200ms; }
         .delay-300 { animation-delay: 300ms; }
         
-        /* Disable selection for logo interaction */
         .no-select {
             -webkit-user-select: none;
             -moz-user-select: none;
@@ -57,7 +61,15 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
 
-        // --- Icons (Inline SVGs) ---
+        // --- Helper: Optimize Cloudinary URLs ---
+        const optimizeUrl = (url) => {
+            if (typeof url === 'string' && url.includes('cloudinary.com') && !url.includes('f_auto')) {
+                return url.replace('/upload/', '/upload/f_auto,q_auto/');
+            }
+            return url;
+        };
+
+        // --- Icons ---
         const Icon = ({ children, size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
                 {children}
@@ -68,7 +80,6 @@
         const Check = (props) => <Icon {...props}><path d="M20 6 9 17l-5-5"/></Icon>;
         const Download = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></Icon>;
         const FileText = (props) => <Icon {...props}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></Icon>;
-        const LayoutGrid = (props) => <Icon {...props}><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></Icon>;
         const RefreshCw = (props) => <Icon {...props}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></Icon>;
         const Sparkles = (props) => <Icon {...props}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 5h4"/><path d="M19 17v4"/><path d="M15 19h4"/></Icon>;
         const Plus = (props) => <Icon {...props}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>;
@@ -79,12 +90,13 @@
         // --- Configuration ---
         const DEFAULT_WIDTH = 1080;
         const DEFAULT_HEIGHT = 1512; // 5:7 aspect ratio baseline
-        const LOGO_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1768422570/Zerach_Full_Logo_Package_-_standard_online_use_2_260114_165502_2_zprn5m_w7pkxj.png";
-        const APP_LOGO_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1768416609/copy_of_zerach_full_logo_package_-_standard_online_use_2_260114_165502_2_zprn5m_c1d92b.jpg";
-        const DECORATION_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1769418531/Gemini_Generated_Image_4mrufu4mrufu4mru_1_1_sdfjzv.png";
-        const COLORED_LOGO_URL = "https://res.cloudinary.com/dpuzslr2j/image/upload/v1768404664/Full-colored-background-e1749387371723_u54kro.png";
+        
+        // Optimized URLs via helper
+        const LOGO_URL = optimizeUrl("https://res.cloudinary.com/dpuzslr2j/image/upload/v1768422570/Zerach_Full_Logo_Package_-_standard_online_use_2_260114_165502_2_zprn5m_w7pkxj.png");
+        const APP_LOGO_URL = optimizeUrl("https://res.cloudinary.com/dpuzslr2j/image/upload/v1768416609/copy_of_zerach_full_logo_package_-_standard_online_use_2_260114_165502_2_zprn5m_c1d92b.jpg");
+        const DECORATION_URL = optimizeUrl("https://res.cloudinary.com/dpuzslr2j/image/upload/v1769418531/Gemini_Generated_Image_4mrufu4mrufu4mru_1_1_sdfjzv.png");
+        const COLORED_LOGO_URL = optimizeUrl("https://res.cloudinary.com/dpuzslr2j/image/upload/v1768404664/Full-colored-background-e1749387371723_u54kro.png");
 
-        // Milestone Images
         const MILESTONE_URLS = [
             { id: 'milestone-100', url: "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801631/IMG_3739_sr62tx.png", name: '100% Reached' },
             { id: 'milestone-75', url: "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801626/IMG_3738_xhaxw0.png", name: '75% Reached' },
@@ -94,7 +106,6 @@
             { id: 'milestone-bonus', url: "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770801610/IMG_3740_byjfcm.png", name: 'Bonus Goal' }
         ];
 
-        // Content Images
         const CONTENT_URLS = [
             { id: 'content-roast', url: "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770804938/WhatsApp_Image_2026-02-11_at_5.10.55_AM_c7lqxi.jpg", name: 'Roast' },
             { id: 'content-build', url: "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770804937/WhatsApp_Image_2026-02-11_at_5.14.33_AM_h9jqbn.jpg", name: 'Build' },
@@ -102,7 +113,6 @@
             { id: 'content-charge', url: "https://res.cloudinary.com/dpuzslr2j/image/upload/v1770804936/WhatsApp_Image_2026-02-11_at_5.14.33_AM_1_psrtnn.jpg", name: 'Charge Phone' }
         ];
 
-        // --- Fonts ---
         const FONT_HEADER = "Cinzel";
         const FONT_BODY = "Montserrat";
 
@@ -234,8 +244,13 @@
                   if (img) {
                       ctx.drawImage(img, 0, 0, width, height);
                   } else {
-                      ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
-                      ctx.fillStyle = '#fff'; ctx.fillText("Loading...", 50, 50);
+                      // Placeholder while loading
+                      ctx.fillStyle = '#0f172a';
+                      ctx.fillRect(0,0,width,height);
+                      ctx.fillStyle = '#64748b';
+                      ctx.font = '20px sans-serif';
+                      ctx.textAlign = 'center';
+                      ctx.fillText("Loading...", width/2, height/2);
                   }
               }
           })),
@@ -250,8 +265,8 @@
                   if (img) {
                       ctx.drawImage(img, 0, 0, width, height);
                   } else {
-                      ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height);
-                      ctx.fillStyle = '#fff'; ctx.fillText("Loading...", 50, 50);
+                      ctx.fillStyle = '#0f172a';
+                      ctx.fillRect(0,0,width,height);
                   }
               }
           }))
@@ -291,7 +306,7 @@
 
         // --- Main App Component ---
         function YeshivasZerachApp() {
-          const [appMode, setAppMode] = useState('loading'); 
+          const [appMode, setAppMode] = useState('home'); 
           const [category, setCategory] = useState(null); 
           const [templates, setTemplates] = useState(INITIAL_TEMPLATES);
           const [selectedTemplate, setSelectedTemplate] = useState(INITIAL_TEMPLATES[0].id);
@@ -299,86 +314,69 @@
           const [activeFieldKey, setActiveFieldKey] = useState(null); 
           
           // Asset State
-          const [assets, setAssets] = useState({
-              logo: null,
-              decoration: null,
-              coloredLogo: null,
-              milestones: {},
-              content: {}
-          });
+          const [logoImage, setLogoImage] = useState(null);
+          const [decorationImage, setDecorationImage] = useState(null);
+          const [coloredLogoImage, setColoredLogoImage] = useState(null);
+          const [milestoneImages, setMilestoneImages] = useState({});
+          const [contentImages, setContentImages] = useState({});
 
           const [containerWidth, setContainerWidth] = useState(0);
           const canvasRef = useRef(null);
           const containerRef = useRef(null);
           const overlayInputRef = useRef(null);
+          const fileInputRef = useRef(null);
 
           // Derived State
           const activeTemplate = templates.find(t => t.id === selectedTemplate);
+          // Determine canvas dimensions dynamically based on the selected template (prioritize stored dimensions, fallback to defaults)
           const canvasWidth = activeTemplate?.width || DEFAULT_WIDTH;
           const canvasHeight = activeTemplate?.height || DEFAULT_HEIGHT;
 
-          // --- Eager Asset Preloading ---
+          // --- Progressive Asset Loading ---
           useEffect(() => {
-            const loadAssets = async () => {
-                const imagePromises = [];
-                const load = (src) => new Promise((resolve) => {
+            // Helper to load and update
+            const loadImage = (src) => {
+                return new Promise((resolve) => {
                     const img = new Image();
-                    img.src = src;
+                    img.src = optimizeUrl(src); // Use optimized URL
+                    img.crossOrigin = "anonymous";
                     img.onload = () => resolve(img);
-                    img.onerror = () => resolve(null); // Resolve null to allow app to start even if one fails
+                    img.onerror = () => resolve(null);
                 });
-
-                // 1. Core Assets
-                const logoPromise = load(LOGO_URL);
-                const decorationPromise = load(DECORATION_URL);
-                const coloredLogoPromise = load(COLORED_LOGO_URL);
-
-                // 2. Dynamic Collections (Milestones & Content)
-                // We load them and update template dimensions in one go
-                const milestoneMap = {};
-                const contentMap = {};
-                const updatedTemplates = [...INITIAL_TEMPLATES];
-
-                // Helper to load and resize templates
-                const processCollection = async (collection, map) => {
-                    await Promise.all(collection.map(async (item) => {
-                        const img = await load(item.url);
-                        if (img) {
-                            map[item.id] = img;
-                            // Update matching template dimensions
-                            const tIndex = updatedTemplates.findIndex(t => t.id === item.id);
-                            if (tIndex !== -1) {
-                                const ar = img.height / img.width;
-                                updatedTemplates[tIndex] = {
-                                    ...updatedTemplates[tIndex],
-                                    width: DEFAULT_WIDTH,
-                                    height: DEFAULT_WIDTH * ar
-                                };
-                            }
-                        }
-                    }));
-                };
-
-                await Promise.all([
-                    processCollection(MILESTONE_URLS, milestoneMap),
-                    processCollection(CONTENT_URLS, contentMap)
-                ]);
-
-                const [logo, decoration, coloredLogo] = await Promise.all([logoPromise, decorationPromise, coloredLogoPromise]);
-
-                setAssets({
-                    logo,
-                    decoration,
-                    coloredLogo,
-                    milestones: milestoneMap,
-                    content: contentMap
-                });
-                
-                setTemplates(updatedTemplates);
-                setAppMode('home'); // Ready!
             };
 
-            loadAssets();
+            // 1. Core Assets (Non-blocking but good to have)
+            loadImage(LOGO_URL).then(img => setLogoImage(img));
+            loadImage(DECORATION_URL).then(img => setDecorationImage(img));
+            loadImage(COLORED_LOGO_URL).then(img => setColoredLogoImage(img));
+
+            // 2. Load Dynamic Images Incrementally
+            const loadAndRegister = (collection, setMap) => {
+                collection.forEach(async (item) => {
+                    const img = await loadImage(item.url);
+                    if (img) {
+                        setMap(prev => ({ ...prev, [item.id]: img }));
+                        
+                        // Update template dimensions immediately
+                        setTemplates(prev => prev.map(t => {
+                            if (t.id === item.id) {
+                                const aspectRatio = img.height / img.width;
+                                return {
+                                    ...t,
+                                    width: DEFAULT_WIDTH,
+                                    height: DEFAULT_WIDTH * aspectRatio,
+                                    isLoaded: true // Mark as loaded for UI cues
+                                };
+                            }
+                            return t;
+                        }));
+                    }
+                });
+            };
+
+            loadAndRegister(MILESTONE_URLS, setMilestoneImages);
+            loadAndRegister(CONTENT_URLS, setContentImages);
+            
           }, []);
 
           useEffect(() => {
@@ -402,7 +400,7 @@
           };
 
           const handleBack = () => {
-              if (appMode === 'editor') {
+              if (appMode === 'editor' || appMode === 'admin') {
                   setAppMode('home');
               } else if (appMode === 'home' && category) {
                   setCategory(null);
@@ -423,12 +421,12 @@
                 canvasWidth, 
                 canvasHeight, 
                 { ...formData, hideText: false }, 
-                assets.logo,
-                assets.decoration,
-                { coloredLogo: assets.coloredLogo, ...assets.milestones, ...assets.content }
+                logoImage,
+                decorationImage,
+                { coloredLogo: coloredLogoImage, ...milestoneImages, ...contentImages }
               );
             }
-          }, [selectedTemplate, formData, assets, templates, canvasWidth, canvasHeight]);
+          }, [selectedTemplate, formData, logoImage, decorationImage, coloredLogoImage, milestoneImages, contentImages, templates, canvasWidth, canvasHeight]);
 
           useEffect(() => {
             if (appMode === 'editor') {
@@ -483,8 +481,8 @@
             template.render(
                 ctx, canvasWidth, canvasHeight, 
                 { ...formData, hideText: false }, 
-                assets.logo, assets.decoration, 
-                { coloredLogo: assets.coloredLogo, ...assets.milestones, ...assets.content }
+                logoImage, decorationImage, 
+                { coloredLogo: coloredLogoImage, ...milestoneImages, ...contentImages }
             );
 
             try {
@@ -505,7 +503,7 @@
             const field = fields.find(f => f.key === activeFieldKey);
             if (!field) return { display: 'none' };
 
-            const scale = containerWidth / canvasWidth;
+            const scale = containerWidth / canvasWidth; 
             const topPct = (field.y / canvasHeight) * 100;
             const fontSize = field.size * scale;
 
@@ -522,24 +520,6 @@
           };
 
           const activeFieldProps = activeTemplate?.getFields(canvasHeight).find(f => f.key === activeFieldKey);
-
-          // --- Loading Screen ---
-          if (appMode === 'loading') {
-              return (
-                  <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-6 animate-fade-in">
-                      <div className="w-20 h-20 rounded-3xl bg-slate-900 border border-slate-700 flex items-center justify-center shadow-[0_0_40px_-10px_rgba(245,158,11,0.2)] animate-pulse">
-                          <img src={APP_LOGO_URL} alt="Logo" className="w-12 h-12 object-cover opacity-90" />
-                      </div>
-                      <div className="flex flex-col items-center gap-2">
-                          <h1 className="text-2xl font-bold text-slate-100 font-serif tracking-widest">Yeshivas Zerach</h1>
-                          <div className="flex items-center gap-2 text-amber-500 text-sm font-bold uppercase tracking-widest">
-                              <RefreshCw size={14} className="animate-spin" />
-                              Loading Studio...
-                          </div>
-                      </div>
-                  </div>
-              );
-          }
 
           return (
             <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 font-sans text-slate-100 pb-20 selection:bg-amber-500/30 selection:text-amber-100">
@@ -669,15 +649,24 @@
                                     style={{ animationDelay: `${i * 100}ms` }}
                                     className="group relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:shadow-[0_0_30px_-10px_rgba(245,158,11,0.2)] transition-all duration-500 animate-fade-in-up"
                                 >
-                                    <div style={{ aspectRatio: `${t.width || DEFAULT_WIDTH}/${t.height || DEFAULT_HEIGHT}` }}>
-                                        <div className="absolute inset-0 opacity-80 group-hover:opacity-100 transition-opacity duration-500">
-                                            <TemplateThumbnail 
-                                                template={t} 
-                                                logo={assets.logo} 
-                                                decoration={assets.decoration} 
-                                                extra={{ coloredLogo: assets.coloredLogo, ...assets.milestones, ...assets.content }}
-                                            />
-                                        </div>
+                                    {/* Aspect Ratio Wrapper - handles dynamic loading states */}
+                                    <div style={{ aspectRatio: `${t.width || DEFAULT_WIDTH}/${t.height || DEFAULT_HEIGHT}` }} className="relative w-full">
+                                        {t.isLoaded || t.category === 'templates' ? (
+                                             <div className="absolute inset-0">
+                                                <TemplateThumbnail 
+                                                    template={t} 
+                                                    logo={logoImage} 
+                                                    decoration={decorationImage} 
+                                                    extra={{ coloredLogo: coloredLogoImage, ...milestoneImages, ...contentImages }}
+                                                />
+                                             </div>
+                                        ) : (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-slate-900 animate-pulse-subtle">
+                                                <RefreshCw className="animate-spin text-slate-700" size={20} />
+                                            </div>
+                                        )}
+
+                                        {/* Overlay always present for interaction feedback */}
                                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
                                         <div className="absolute inset-x-0 bottom-0 p-3 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
                                             <span className="text-slate-200 text-xs font-bold block text-center truncate tracking-wide group-hover:text-amber-400 transition-colors">{t.name}</span>
@@ -718,6 +707,15 @@
                                     style={getOverlayStyle()}
                                     autoFocus
                                 />
+                            )}
+                            
+                            {!logoImage && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-slate-950 z-10 pointer-events-none">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <RefreshCw className="animate-spin text-amber-500" />
+                                        <span className="text-xs font-bold tracking-widest text-slate-500 uppercase">Loading Assets</span>
+                                    </div>
+                                </div>
                             )}
                         </div>
 
